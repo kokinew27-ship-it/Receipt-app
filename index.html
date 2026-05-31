@@ -120,7 +120,7 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
       <div id="tab-scan">
         <div class="form-row">
           <label>処理番号（6桁）を入力</label>
-          <input type="text" id="barcode-input" placeholder="例：711609" inputmode="numeric" maxlength="10" oninput="onCodeInput(this.value)" onkeydown="if(event.key==='Enter')searchByCode()">
+          <input type="tel" id="barcode-input" placeholder="例：711609" maxlength="10" oninput="onCodeInput(this.value)" onkeydown="if(event.key==='Enter')searchByCode()">
           <div id="suggest-box"></div>
         </div>
         <button class="btn btn-cam" onclick="toggleCamera()">
@@ -144,7 +144,7 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
       <div id="tab-manual" style="display:none">
         <div class="form-row">
           <label>処理番号（任意）</label>
-          <input type="text" id="m-code" placeholder="711609" inputmode="numeric" oninput="onManualCodeInput(this.value)">
+          <input type="tel" id="m-code" placeholder="711609" oninput="onManualCodeInput(this.value)">
           <div id="m-suggest-box"></div>
         </div>
         <div class="form-row">
