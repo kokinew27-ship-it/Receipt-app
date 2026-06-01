@@ -23,6 +23,7 @@
   }
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{--p:#c8860a;--pl:#fdf3e0;--pd:#8a5c00;--ac:#2d6a4f;--bg:#f7f4ef;--card:#fff;--bd:#e0d5c5;--tx:#2c2416;--mu:#8a7a60;--red:#c0392b;--r:14px;}
@@ -163,15 +164,17 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
         </div>
         <div id="suggest-box"></div>
       </div>
-      <!-- iPhone用：カメラ撮影ボタン -->
+      <!-- カメラ撮影：6桁数字OCR認識 -->
       <input type="file" id="camera-file" accept="image/*" capture="environment" style="display:none" onchange="scanFromPhoto(event)">
       <button class="btn btn-cam" onclick="document.getElementById('camera-file').click()" style="margin-bottom:8px">
-        📷 カメラで撮影してスキャン
+        📷 カメラで6桁番号を読み取る
       </button>
-      <!-- ライブカメラ（Android/PC用） -->
-      <button class="btn btn-outline" onclick="toggleCamera()" style="margin-bottom:0;font-size:14px">
-        <span id="cam-icon">🎥</span><span id="cam-text">ライブカメラ（Android用）</span>
-      </button>
+      <!-- 撮影プレビュー -->
+      <div id="photo-preview-wrap" style="display:none;margin-bottom:10px">
+        <p style="font-size:12px;color:var(--mu);margin-bottom:6px;text-align:center">撮影画像・認識結果</p>
+        <img id="photo-preview" style="width:100%;border-radius:10px;max-height:200px;object-fit:cover">
+        <div id="ocr-candidates" style="margin-top:8px"></div>
+      </div>
       <div class="camera-wrap" id="camera-wrap">
         <video id="camera-view" autoplay playsinline muted></video>
         <div class="camera-overlay">
@@ -357,60 +360,107 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
 
 <script>
 
-// ========== iPhone写真撮影からスキャン ==========
+// ========== iPhone写真撮影→6桁数字OCR認識 ==========
 async function scanFromPhoto(event) {
   const file = event.target.files[0];
   if (!file) return;
-  document.getElementById('scan-status').textContent = '📷 解析中...';
+  document.getElementById('scan-status').textContent = '🔍 数字を解析中...';
+  document.getElementById('photo-preview-wrap').style.display = 'block';
+
+  const url = URL.createObjectURL(file);
+  document.getElementById('photo-preview').src = url;
 
   const img = new Image();
-  const url = URL.createObjectURL(file);
   img.onload = async function() {
     const canvas = document.getElementById('camera-canvas');
-    canvas.width = img.width;
-    canvas.height = img.height;
+    // 高解像度処理
+    const maxW = 1600;
+    const scale = Math.min(1, maxW / img.width);
+    canvas.width = img.width * scale;
+    canvas.height = img.height * scale;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0);
-    URL.revokeObjectURL(url);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    if ('BarcodeDetector' in window) {
-      try {
-        const detector = new BarcodeDetector({
-          formats: ['ean_13','ean_8','code_128','code_39','itf','upc_a','upc_e','qr_code']
-        });
-        const codes = await detector.detect(canvas);
-        if (codes.length > 0) {
-          const raw = codes[0].rawValue;
-          document.getElementById('scan-status').textContent = '✅ 読取: ' + raw;
-          document.getElementById('barcode-input').value = raw;
-          searchByCode();
-        } else {
-          document.getElementById('scan-status').textContent = '⚠️ バーコードを認識できませんでした。もう一度撮影してください';
+    // コントラスト強調（数字が読みやすくなる）
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const avg = (data[i] + data[i+1] + data[i+2]) / 3;
+      const v = avg > 128 ? 255 : 0;
+      data[i] = data[i+1] = data[i+2] = v;
+    }
+    ctx.putImageData(imageData, 0, 0);
+
+    // Tesseract.js でOCR（数字のみ認識）
+    try {
+      const { createWorker } = Tesseract;
+      const worker = await createWorker('eng', 1, {
+        logger: m => {
+          if(m.status === 'recognizing text') {
+            document.getElementById('scan-status').textContent = '🔍 認識中... ' + Math.round(m.progress*100) + '%';
+          }
         }
-      } catch(e) {
-        document.getElementById('scan-status').textContent = '❌ 解析エラー。処理番号を手入力してください';
-      }
-    } else {
-      // BarcodeDetector非対応（Safari）→ ZXing-jsで解析
-      try {
-        const { BrowserMultiFormatReader } = await import('https://unpkg.com/@zxing/browser@latest/esm/index.js');
-        const reader = new BrowserMultiFormatReader();
-        const result = await reader.decodeFromImageElement(
-          Object.assign(new Image(), {src: canvas.toDataURL()})
-        );
-        const raw = result.getText();
-        document.getElementById('scan-status').textContent = '✅ 読取: ' + raw;
-        document.getElementById('barcode-input').value = raw;
-        searchByCode();
-      } catch(e) {
-        document.getElementById('scan-status').textContent = '⚠️ 認識できませんでした。処理番号を入力してください';
+      });
+      await worker.setParameters({
+        tessedit_char_whitelist: '0123456789',
+        tessedit_pageseg_mode: '6',
+      });
+      const { data: { text } } = await worker.recognize(canvas);
+      await worker.terminate();
+
+      // 6桁の数字を全て抽出
+      const numbers = text.replace(/\s/g, '').match(/\d{6}/g) || [];
+      const unique = [...new Set(numbers)];
+
+      if (unique.length > 0) {
+        // マスターと照合
+        const matched = unique.filter(n => MASTER[n]);
+        const candidates = matched.length > 0 ? matched : unique;
+
+        document.getElementById('scan-status').textContent = '✅ 認識完了';
+
+        // 候補ボタンを表示
+        const candidateHtml = candidates.map(n => {
+          const p = MASTER[n];
+          return `<button onclick="selectFromOCR('${n}')" style="
+            width:100%;padding:10px 14px;margin-bottom:6px;
+            background:${p ? 'var(--pl)' : '#f5f5f5'};
+            border:2px solid ${p ? 'var(--p)' : '#ccc'};
+            border-radius:10px;cursor:pointer;text-align:left;font-size:14px">
+            <span style="font-weight:700;font-size:16px;color:var(--pd)">${n}</span>
+            ${p ? `<span style="margin-left:8px">${p.name}</span><span style="float:right;color:var(--pd);font-weight:700">¥${p.price.toLocaleString()}</span>` : '<span style="color:#999;margin-left:8px">未登録</span>'}
+          </button>`;
+        }).join('');
+
+        document.getElementById('ocr-candidates').innerHTML =
+          `<p style="font-size:12px;color:var(--mu);margin-bottom:6px">認識した番号（タップして選択）：</p>` + candidateHtml;
+
+        // マスター一致が1件だけなら自動選択
+        if (matched.length === 1) {
+          setTimeout(() => selectFromOCR(matched[0]), 500);
+        }
+      } else {
+        document.getElementById('scan-status').textContent = '⚠️ 6桁の数字が見つかりませんでした';
+        document.getElementById('ocr-candidates').innerHTML =
+          `<p style="font-size:13px;color:var(--red);text-align:center">認識できませんでした。<br>処理番号を直接入力してください</p>`;
         document.getElementById('barcode-input').focus();
       }
+    } catch(e) {
+      document.getElementById('scan-status').textContent = '❌ OCRエラー: ' + e.message;
+      document.getElementById('barcode-input').focus();
     }
+    URL.revokeObjectURL(url);
   };
   img.src = url;
-  // input をリセット（同じファイルを再度撮影できるように）
   event.target.value = '';
+}
+
+function selectFromOCR(code) {
+  document.getElementById('barcode-input').value = code;
+  document.getElementById('photo-preview-wrap').style.display = 'none';
+  document.getElementById('ocr-candidates').innerHTML = '';
+  document.getElementById('scan-status').textContent = '';
+  searchByCode();
 }
 
 // ========== 商品マスター（飲食フラグ付き） ==========
