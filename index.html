@@ -176,6 +176,57 @@ input:focus,select:focus{border-color:var(--p);}
   </div>
 </div>
 
+  <!-- 支払い方法 -->
+  <div class="card" id="pay-card" style="display:none">
+    <div class="ch">💳 支払い方法</div>
+    <div class="cb">
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+        <label style="display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--bd);border-radius:10px;padding:12px 14px;cursor:pointer">
+          <input type="radio" name="paytype" id="pay-cash" value="cash" style="width:20px;height:20px;accent-color:var(--p)" onchange="onPayChange()" checked>
+          <span style="font-size:15px;font-weight:600">💴 現金のみ</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--bd);border-radius:10px;padding:12px 14px;cursor:pointer">
+          <input type="radio" name="paytype" id="pay-other" value="other" style="width:20px;height:20px;accent-color:var(--p)" onchange="onPayChange()">
+          <span style="font-size:15px;font-weight:600">💳 現金以外の支払い</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--bd);border-radius:10px;padding:12px 14px;cursor:pointer">
+          <input type="radio" name="paytype" id="pay-mixed" value="mixed" style="width:20px;height:20px;accent-color:var(--p)" onchange="onPayChange()">
+          <span style="font-size:15px;font-weight:600">💴＋💳 現金＋現金以外</span>
+        </label>
+      </div>
+      <div id="pay-other-type" style="display:none;margin-bottom:12px">
+        <label style="margin-bottom:6px">現金以外の種別</label>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <label style="flex:1;display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid var(--bd);border-radius:10px;padding:10px;cursor:pointer">
+            <input type="radio" name="othertype" id="ot-credit" value="credit" style="width:18px;height:18px;accent-color:var(--p)" checked onchange="updatePayRows()">
+            <span style="font-size:14px;font-weight:600">💳 クレジット</span>
+          </label>
+          <label style="flex:1;display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid var(--bd);border-radius:10px;padding:10px;cursor:pointer">
+            <input type="radio" name="othertype" id="ot-paypay" value="paypay" style="width:18px;height:18px;accent-color:var(--p)" onchange="updatePayRows()">
+            <span style="font-size:14px;font-weight:600">📱 PAYPAY・その他</span>
+          </label>
+        </div>
+      </div>
+      <div id="pay-mixed-fields" style="display:none">
+        <div style="background:var(--pl);border-radius:10px;padding:12px">
+          <div class="fr" style="margin-bottom:10px">
+            <label>💴 現金（円）</label>
+            <input type="tel" id="pay-cash-amt" placeholder="0" inputmode="numeric" style="font-size:17px;text-align:right" oninput="onPayAmtChange()">
+          </div>
+          <div class="fr" style="margin-bottom:10px" id="pay-credit-row">
+            <label>💳 クレジット（円）</label>
+            <input type="tel" id="pay-credit-amt" placeholder="0" inputmode="numeric" style="font-size:17px;text-align:right" oninput="onPayAmtChange()">
+          </div>
+          <div class="fr" style="margin-bottom:10px;display:none" id="pay-paypay-row">
+            <label>📱 PAYPAY・その他（円）</label>
+            <input type="tel" id="pay-paypay-amt" placeholder="0" inputmode="numeric" style="font-size:17px;text-align:right" oninput="onPayAmtChange()">
+          </div>
+          <div id="pay-balance" style="font-size:13px;text-align:right;color:var(--mu);margin-top:4px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 <!-- 領収書ページ -->
 <div class="pg" id="pg-receipt">
   <div class="card">
@@ -621,6 +672,7 @@ function addFromPanel() {
   renderItems();
   updateBadge();
   closePanel();
+  document.getElementById('pay-card').style.display=items.length?'block':'none';
   toast('✅ 追加しました');
 }
 
@@ -650,9 +702,59 @@ function renderItems() {
   }).join('');
 }
 
+
+// ===== 支払い方法 =====
+function onPayChange() {
+  const type = document.querySelector('input[name="paytype"]:checked') ? document.querySelector('input[name="paytype"]:checked').value : 'cash';
+  document.getElementById('pay-other-type').style.display = (type==='other'||type==='mixed') ? 'block' : 'none';
+  document.getElementById('pay-mixed-fields').style.display = type==='mixed' ? 'block' : 'none';
+  updatePayRows();
+  if(type==='mixed') onPayAmtChange();
+}
+
+function updatePayRows() {
+  const ot = document.querySelector('input[name="othertype"]:checked') ? document.querySelector('input[name="othertype"]:checked').value : 'credit';
+  document.getElementById('pay-credit-row').style.display = ot==='credit' ? 'block' : 'none';
+  document.getElementById('pay-paypay-row').style.display = ot==='paypay' ? 'block' : 'none';
+}
+
+function onPayAmtChange() {
+  const c = calc();
+  const cashAmt = parseInt(document.getElementById('pay-cash-amt').value)||0;
+  const creditAmt = parseInt(document.getElementById('pay-credit-amt').value)||0;
+  const paypayAmt = parseInt(document.getElementById('pay-paypay-amt').value)||0;
+  const paid = cashAmt + creditAmt + paypayAmt;
+  const diff = c.total - paid;
+  const el = document.getElementById('pay-balance');
+  if(diff===0) el.innerHTML = '<span style="color:var(--ac);font-weight:700">✅ 合計と一致</span>';
+  else if(diff>0) el.innerHTML = '<span style="color:var(--red);font-weight:700">⚠️ ¥'+diff.toLocaleString()+' 不足</span>';
+  else el.innerHTML = '<span style="color:#856404;font-weight:700">おつり：¥'+Math.abs(diff).toLocaleString()+'</span>';
+}
+
+function getPaymentLabel() {
+  const el = document.querySelector('input[name="paytype"]:checked');
+  const type = el ? el.value : 'cash';
+  const otEl = document.querySelector('input[name="othertype"]:checked');
+  const ot = otEl ? otEl.value : 'credit';
+  const otLabel = ot==='credit' ? 'クレジット' : 'PAYPAY・その他';
+  if(type==='cash') return '現金払いのみ';
+  if(type==='other') return otLabel + 'のみの支払い';
+  if(type==='mixed') {
+    const cashAmt = parseInt(document.getElementById('pay-cash-amt').value)||0;
+    const creditAmt = parseInt(document.getElementById('pay-credit-amt').value)||0;
+    const paypayAmt = parseInt(document.getElementById('pay-paypay-amt').value)||0;
+    const parts = [];
+    if(cashAmt>0) parts.push('現金 ¥'+cashAmt.toLocaleString());
+    if(creditAmt>0) parts.push('クレジット ¥'+creditAmt.toLocaleString());
+    if(paypayAmt>0) parts.push('PAYPAY・その他 ¥'+paypayAmt.toLocaleString());
+    return parts.length ? parts.join(' ／ ') : '現金＋現金以外';
+  }
+  return '';
+}
+
 function chgQty(i,d){ items[i].qty=Math.max(1,items[i].qty+d); renderItems(); updateBadge(); }
 function delItem(i){ items.splice(i,1); renderItems(); updateBadge(); }
-function clearItems(){ if(items.length && confirm('明細をすべてクリアしますか？')){ items=[]; renderItems(); updateBadge(); } }
+function clearItems(){ if(items.length && confirm('明細をすべてクリアしますか？')){ items=[]; renderItems(); updateBadge(); document.getElementById('pay-card').style.display='none'; } }
 function updateBadge(){ const b=document.getElementById('ibadge'); if(items.length){b.style.display='flex';b.textContent=items.length;}else b.style.display='none'; }
 
 // ===== 計算 =====
@@ -716,7 +818,9 @@ function buildReceipt() {
     </table>
     <hr style="border:1px dashed #ccc;margin:8px 0">
     <div style="text-align:right;font-size:11px;color:#888">${date}</div>
-    <div style="text-align:center;font-weight:700;font-size:14px;margin-top:8px">メナード北谷美浜店</div>`;
+    <hr style="border:1px dashed #ccc;margin:8px 0">
+    <div style="font-size:13px;font-weight:600">【支払い方法】\${getPaymentLabel()}</div>
+    <div style="text-align:center;font-weight:700;font-size:14px;margin-top:10px">メナード北谷美浜店</div>`;
 }
 
 function showPreview() {
@@ -746,6 +850,7 @@ function saveToDaily() {
     recip: document.getElementById('recip').value||'−',
     total: c.total, disc: Math.floor(c.disc), t8: c.t8, t10: c.t10, dir: c.dir,
     time: pad(t.getHours())+':'+pad(t.getMinutes()),
+    payment: getPaymentLabel(),
     items: items.map(i=>({...i}))
   });
   try { localStorage.setItem('mdaily', JSON.stringify(daily)); } catch(e){}
@@ -848,7 +953,7 @@ function mailDaily() {
 
   // CSV作成（日付・商品番号・商品名・数量・お客様名・担当者）
   const BOM = '\uFEFF';
-  const header = ['日付','領収書番号','商品番号','商品名','数量','お客様名','担当者','単価(税抜)','割引率(%)','税率(%)','小計(税込)'];
+  const header = ['日付','領収書番号','商品番号','商品名','数量','お客様名','担当者','支払い方法','単価(税抜)','割引率(%)','税率(%)','小計(税込)'];
   const csvRows = [header.join(',')];
 
   recs.forEach(r => {
@@ -864,6 +969,7 @@ function mailDaily() {
         item.qty || 1,
         '"' + (r.recip || '').replace(/"/g, '""') + '"',
         r.staff,
+        '"' + (r.payment || '').replace(/"/g, '""') + '"',
         item.direct ? '' : item.price,
         item.direct ? '' : (item.disc || 0),
         item.direct ? '税込直接' : item.tax,
