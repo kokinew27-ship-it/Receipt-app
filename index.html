@@ -310,19 +310,66 @@ input:focus,select:focus{border-color:var(--p);}
   <button class="btn bs" onclick="doPrint()">🖨️ 印刷する</button>
 </div>
 
-<!-- 日計表ページ -->
+<!-- 日計表・処理表ページ -->
 <div class="pg" id="pg-daily">
-  <div class="card">
-    <div class="ch">📊 本日の日計表</div>
-    <div class="cb" id="daily-sum"><div class="empty">本日の発行はまだありません</div></div>
+
+  <!-- タブ切替 -->
+  <div style="display:flex;background:#f0ebe0;border-radius:12px;padding:3px;margin-bottom:12px;">
+    <button id="tab-daily-btn" onclick="switchDailyTab('daily')"
+      style="flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:var(--card);color:var(--pd);box-shadow:0 1px 4px rgba(0,0,0,.1)">
+      📊 日計表
+    </button>
+    <button id="tab-proc-btn" onclick="switchDailyTab('proc')"
+      style="flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--mu)">
+      📋 処理表
+    </button>
   </div>
-  <div class="card">
-    <div class="ch">🧾 発行一覧</div>
-    <div class="cb" id="daily-list"><div class="empty">まだ発行がありません</div></div>
+
+  <!-- 日計表タブ -->
+  <div id="tab-daily">
+    <div class="card">
+      <div class="ch">📊 本日の日計表</div>
+      <div class="cb" id="daily-sum"><div class="empty">本日の発行はまだありません</div></div>
+    </div>
+    <div class="card">
+      <div class="ch">🧾 発行一覧</div>
+      <div class="cb" id="daily-list"><div class="empty">まだ発行がありません</div></div>
+    </div>
+    <button class="btn bs" onclick="mailDaily()">📧 メールで送信（CSV）</button>
+    <button class="btn bp" onclick="printDaily()">🖨️ 日計表を印刷</button>
+    <button class="btn bo" onclick="clearDaily()">🗑 日計をリセット</button>
   </div>
-  <button class="btn bs" onclick="mailDaily()">📧 メールで送信</button>
-  <button class="btn bp" onclick="printDaily()">🖨️ 日計表を印刷</button>
-  <button class="btn bo" onclick="clearDaily()">🗑 日計をリセット</button>
+
+  <!-- 処理表タブ -->
+  <div id="tab-proc" style="display:none">
+    <div class="card">
+      <div class="ch">📋 処理表
+        <span id="proc-count" style="margin-left:auto;background:var(--p);color:#fff;border-radius:10px;padding:1px 10px;font-size:11px"></span>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="proc-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:700px">
+          <thead>
+            <tr style="background:var(--pl);color:var(--pd)">
+              <th style="padding:8px 10px;text-align:left;border-bottom:2px solid var(--bd);white-space:nowrap">日付</th>
+              <th style="padding:8px 10px;text-align:left;border-bottom:2px solid var(--bd);white-space:nowrap">商品番号</th>
+              <th style="padding:8px 10px;text-align:left;border-bottom:2px solid var(--bd);white-space:nowrap">商品名</th>
+              <th style="padding:8px 6px;text-align:center;border-bottom:2px solid var(--bd);white-space:nowrap">数量</th>
+              <th style="padding:8px 10px;text-align:left;border-bottom:2px solid var(--bd);white-space:nowrap">お客様名</th>
+              <th style="padding:8px 10px;text-align:right;border-bottom:2px solid var(--bd);white-space:nowrap">支払金額</th>
+              <th style="padding:8px 10px;text-align:left;border-bottom:2px solid var(--bd);white-space:nowrap">支払方法</th>
+              <th style="padding:8px 10px;text-align:left;border-bottom:2px solid var(--bd);white-space:nowrap">担当者</th>
+            </tr>
+          </thead>
+          <tbody id="proc-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--mu)">処理データがありません</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <button class="btn bs" onclick="exportProcCSV()">📧 処理表をCSVで送信</button>
+    <button class="btn bp" onclick="printProc()">🖨️ 処理表を印刷</button>
+  </div>
+
 </div>
 
 <!-- 管理者ページ -->
@@ -612,7 +659,7 @@ function goPage(name) {
   document.getElementById('nb-'+name).classList.add('on');
   if(name === 'receipt') calcAll();
   if(name === 'scan') { document.getElementById('pay-card').style.display = 'none'; document.getElementById('next-action-card').style.display = items.length ? 'block' : 'none'; }
-  if(name === 'daily') renderDaily();
+  if(name === 'daily') { renderDaily(); switchDailyTab('daily'); }
   if(name === 'admin') { document.getElementById('alock').style.display='block'; document.getElementById('acont').style.display='none'; document.getElementById('apw').value=''; }
 }
 
@@ -1172,6 +1219,175 @@ function clearDaily() {
     renderDaily();
     toast('🗑 本日分をリセットしました');
   }
+}
+
+
+// ===== 処理表 =====
+function switchDailyTab(tab) {
+  document.getElementById('tab-daily').style.display = tab === 'daily' ? 'block' : 'none';
+  document.getElementById('tab-proc').style.display = tab === 'proc' ? 'block' : 'none';
+  const dailyBtn = document.getElementById('tab-daily-btn');
+  const procBtn = document.getElementById('tab-proc-btn');
+  if(tab === 'daily') {
+    dailyBtn.style.background = 'var(--card)'; dailyBtn.style.color = 'var(--pd)';
+    dailyBtn.style.boxShadow = '0 1px 4px rgba(0,0,0,.1)';
+    procBtn.style.background = 'transparent'; procBtn.style.color = 'var(--mu)';
+    procBtn.style.boxShadow = 'none';
+  } else {
+    procBtn.style.background = 'var(--card)'; procBtn.style.color = 'var(--pd)';
+    procBtn.style.boxShadow = '0 1px 4px rgba(0,0,0,.1)';
+    dailyBtn.style.background = 'transparent'; dailyBtn.style.color = 'var(--mu)';
+    dailyBtn.style.boxShadow = 'none';
+    renderProc();
+  }
+}
+
+function renderProc() {
+  const today = new Date().toISOString().split('T')[0];
+  const recs = daily.filter(r => r.date === today);
+  const tbody = document.getElementById('proc-tbody');
+  const countEl = document.getElementById('proc-count');
+
+  if(!recs.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--mu)">処理データがありません</td></tr>';
+    if(countEl) countEl.textContent = '0件';
+    return;
+  }
+
+  // 商品単位で展開
+  let rows = [];
+  recs.forEach(r => {
+    r.items.forEach(item => {
+      const sub = item.direct
+        ? item.price
+        : Math.floor(item.price * (1 - item.disc/100) * item.qty * (1 + item.tax/100));
+      rows.push({
+        date: r.date,
+        code: item.code || '−',
+        name: item.name,
+        qty: item.qty || 1,
+        recip: r.recip,
+        amount: sub,
+        payment: r.payment || '−',
+        staff: r.staff
+      });
+    });
+  });
+
+  if(countEl) countEl.textContent = rows.length + '件';
+
+  tbody.innerHTML = rows.map((row, i) => {
+    const bg = i % 2 === 0 ? '#fff' : '#fafaf8';
+    // 支払い方法バッジ色
+    let payColor = '#e8f0fe'; let payTxt = '#1a56a0';
+    if(row.payment.includes('現金')) { payColor = '#fdf3e0'; payTxt = '#8a5c00'; }
+    if(row.payment.includes('クレジット')) { payColor = '#f3e8ff'; payTxt = '#6b21a8'; }
+    if(row.payment.includes('PAYPAY')) { payColor = '#e8f5e9'; payTxt = '#2d6a4f'; }
+    return `<tr style="background:${bg};border-bottom:1px solid var(--bd)">
+      <td style="padding:8px 10px;white-space:nowrap;font-size:11px;color:var(--mu)">${row.date}</td>
+      <td style="padding:8px 10px;font-weight:700;color:var(--pd);letter-spacing:1px">${row.code}</td>
+      <td style="padding:8px 10px;min-width:120px">${row.name}</td>
+      <td style="padding:8px 6px;text-align:center;font-weight:600">${row.qty}</td>
+      <td style="padding:8px 10px;white-space:nowrap">${row.recip} 様</td>
+      <td style="padding:8px 10px;text-align:right;font-weight:700;color:var(--pd)">¥${row.amount.toLocaleString()}</td>
+      <td style="padding:8px 10px;white-space:nowrap">
+        <span style="font-size:11px;padding:2px 8px;border-radius:8px;font-weight:700;background:${payColor};color:${payTxt}">${row.payment}</span>
+      </td>
+      <td style="padding:8px 10px;white-space:nowrap;font-weight:600">${row.staff}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportProcCSV() {
+  const today = new Date().toISOString().split('T')[0];
+  const recs = daily.filter(r => r.date === today);
+  if(!recs.length) { toast('⚠️ 本日の処理データがありません'); return; }
+
+  const BOM = '﻿';
+  const header = ['日付','商品番号','商品名','数量','お客様名','支払金額','支払方法','担当者'];
+  const csvRows = [header.join(',')];
+
+  recs.forEach(r => {
+    r.items.forEach(item => {
+      const sub = item.direct
+        ? item.price
+        : Math.floor(item.price * (1 - item.disc/100) * item.qty * (1 + item.tax/100));
+      csvRows.push([
+        r.date,
+        item.code || '',
+        '"' + (item.name || '').replace(/"/g, '""') + '"',
+        item.qty || 1,
+        '"' + (r.recip || '').replace(/"/g, '""') + '"',
+        sub,
+        '"' + (r.payment || '').replace(/"/g, '""') + '"',
+        r.staff
+      ].join(','));
+    });
+  });
+
+  const blob = new Blob([BOM + csvRows.join('
+')], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = '処理表_' + today + '.csv';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+
+  setTimeout(() => {
+    const subj = encodeURIComponent('【処理表】メナード北谷美浜店 ' + today);
+    const body = encodeURIComponent('処理表（' + today + '）をCSVファイルで送付します。
+添付ファイルをご確認ください。');
+    window.location.href = 'mailto:kokinew27@gmail.com?subject=' + subj + '&body=' + body;
+  }, 600);
+  toast('📧 CSVダウンロード＆メール起動');
+}
+
+function printProc() {
+  const today = new Date().toISOString().split('T')[0];
+  const recs = daily.filter(r => r.date === today);
+  if(!recs.length) { toast('⚠️ 本日の処理データがありません'); return; }
+
+  let rows = [];
+  recs.forEach(r => {
+    r.items.forEach(item => {
+      const sub = item.direct ? item.price : Math.floor(item.price*(1-item.disc/100)*item.qty*(1+item.tax/100));
+      rows.push({ date:r.date, code:item.code||'−', name:item.name, qty:item.qty||1, recip:r.recip, amount:sub, payment:r.payment||'−', staff:r.staff });
+    });
+  });
+
+  const tableRows = rows.map((row,i) =>
+    '<tr style="background:' + (i%2===0?'#fff':'#fafaf8') + ';border-bottom:1px solid #eee">'
+    + '<td style="padding:5px 8px">' + row.date + '</td>'
+    + '<td style="padding:5px 8px;font-weight:700">' + row.code + '</td>'
+    + '<td style="padding:5px 8px">' + row.name + '</td>'
+    + '<td style="padding:5px 8px;text-align:center">' + row.qty + '</td>'
+    + '<td style="padding:5px 8px">' + row.recip + ' 様</td>'
+    + '<td style="padding:5px 8px;text-align:right;font-weight:700">¥' + row.amount.toLocaleString() + '</td>'
+    + '<td style="padding:5px 8px">' + row.payment + '</td>'
+    + '<td style="padding:5px 8px;font-weight:600">' + row.staff + '</td>'
+    + '</tr>'
+  ).join('');
+
+  const area = document.getElementById('parea');
+  area.style.display = 'block';
+  area.innerHTML =
+    '<div style="text-align:center;font-size:18px;font-weight:700;margin-bottom:6px">処 理 表</div>'
+    + '<div style="text-align:center;font-size:12px;color:#888;margin-bottom:10px">メナード北谷美浜店　' + today + '　（' + rows.length + '件）</div>'
+    + '<table style="width:100%;border-collapse:collapse;font-size:11px">'
+    + '<tr style="background:#fdf3e0;font-weight:700">'
+    + '<th style="padding:5px 8px;text-align:left">日付</th>'
+    + '<th style="padding:5px 8px;text-align:left">商品番号</th>'
+    + '<th style="padding:5px 8px;text-align:left">商品名</th>'
+    + '<th style="padding:5px 8px;text-align:center">数量</th>'
+    + '<th style="padding:5px 8px;text-align:left">お客様名</th>'
+    + '<th style="padding:5px 8px;text-align:right">支払金額</th>'
+    + '<th style="padding:5px 8px;text-align:left">支払方法</th>'
+    + '<th style="padding:5px 8px;text-align:left">担当者</th>'
+    + '</tr>'
+    + tableRows
+    + '</table>';
+  window.print();
+  setTimeout(() => { area.style.display = 'none'; }, 800);
 }
 
 // ===== 管理者 =====
