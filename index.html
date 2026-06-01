@@ -176,6 +176,19 @@ input:focus,select:focus{border-color:var(--p);}
   </div>
 </div>
 
+  <!-- 次のアクション -->
+  <div class="card" id="next-action-card" style="display:none">
+    <div class="ch">➡️ 次のステップ</div>
+    <div class="cb">
+      <button class="btn bp" onclick="addMoreItem()" style="margin-bottom:10px">
+        ➕ 商品を追加する
+      </button>
+      <button class="btn bs" onclick="finishInput()">
+        ✅ 商品入力を終了して支払いへ
+      </button>
+    </div>
+  </div>
+
   <!-- 支払い方法 -->
   <div class="card" id="pay-card" style="display:none">
     <div class="ch">💳 支払い方法</div>
@@ -579,7 +592,7 @@ function goPage(name) {
   document.getElementById('pg-'+name).classList.add('on');
   document.getElementById('nb-'+name).classList.add('on');
   if(name === 'receipt') calcAll();
-  if(name === 'scan') { document.getElementById('pay-card').style.display = items.length ? 'block' : 'none'; }
+  if(name === 'scan') { document.getElementById('pay-card').style.display = 'none'; document.getElementById('next-action-card').style.display = items.length ? 'block' : 'none'; }
   if(name === 'daily') renderDaily();
   if(name === 'admin') { document.getElementById('alock').style.display='block'; document.getElementById('acont').style.display='none'; document.getElementById('apw').value=''; }
 }
@@ -683,7 +696,12 @@ function addFromPanel() {
   renderItems();
   updateBadge();
   closePanel();
-  document.getElementById('pay-card').style.display=items.length?'block':'none';
+  // 支払いカードは非表示に戻す（入力終了前は見せない）
+  document.getElementById('pay-card').style.display = 'none';
+  document.getElementById('pay-confirm-btn').style.display = 'none';
+  // 次のアクションカードを表示
+  document.getElementById('next-action-card').style.display = 'block';
+  document.getElementById('next-action-card').scrollIntoView({behavior:'smooth'});
   toast('✅ 追加しました');
 }
 
@@ -713,6 +731,33 @@ function renderItems() {
   }).join('');
 }
 
+
+
+// ===== 商品追加・入力終了 =====
+function addMoreItem() {
+  // 次のアクションカードを隠して入力欄にスクロール
+  document.getElementById('next-action-card').style.display = 'none';
+  document.getElementById('code-inp').value = '';
+  document.getElementById('sug-box').innerHTML = '';
+  document.getElementById('epanel').classList.remove('on');
+  window.scrollTo({top: 0, behavior: 'smooth'});
+  setTimeout(() => document.getElementById('code-inp').focus(), 400);
+}
+
+function finishInput() {
+  // 次のアクションカードを隠して支払い方法へ
+  document.getElementById('next-action-card').style.display = 'none';
+  document.getElementById('pay-card').style.display = 'block';
+  // 支払い確定ボタンは選択後に表示
+  document.getElementById('pay-confirm-btn').style.display = 'none';
+  // デフォルトで現金を選択済みにする
+  document.getElementById('pay-cash').checked = true;
+  onPayChange();
+  setTimeout(() => {
+    document.getElementById('pay-card').scrollIntoView({behavior: 'smooth'});
+  }, 100);
+  toast('💳 支払い方法を選択してください');
+}
 
 // ===== 支払い方法 =====
 function onPayChange() {
@@ -798,7 +843,7 @@ function getPaymentLabel() {
 
 function chgQty(i,d){ items[i].qty=Math.max(1,items[i].qty+d); renderItems(); updateBadge(); }
 function delItem(i){ items.splice(i,1); renderItems(); updateBadge(); }
-function clearItems(){ if(items.length && confirm('明細をすべてクリアしますか？')){ items=[]; renderItems(); updateBadge(); document.getElementById('pay-card').style.display='none'; } }
+function clearItems(){ if(items.length && confirm('明細をすべてクリアしますか？')){ items=[]; renderItems(); updateBadge(); document.getElementById('pay-card').style.display='none'; document.getElementById('next-action-card').style.display='none'; } }
 function updateBadge(){ const b=document.getElementById('ibadge'); if(items.length){b.style.display='flex';b.textContent=items.length;}else b.style.display='none'; }
 
 // ===== 計算 =====
