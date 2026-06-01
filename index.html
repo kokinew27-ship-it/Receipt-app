@@ -327,6 +327,104 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
   <button class="btn btn-danger-sm" style="width:100%;justify-content:center;margin-bottom:10px" onclick="clearDaily()">🗑 日計をリセット</button>
 </div>
 
+
+<!-- 管理者ページ -->
+<div class="page" id="page-admin">
+
+  <!-- パスワード認証 -->
+  <div id="admin-lock" class="card">
+    <div class="card-head">🔐 管理者認証</div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--mu);margin-bottom:12px">管理者専用画面です。パスワードを入力してください。</p>
+      <div class="form-row">
+        <label>パスワード</label>
+        <input type="password" id="admin-pw" placeholder="パスワードを入力" onkeydown="if(event.key==='Enter')checkAdminPw()">
+      </div>
+      <button class="btn btn-primary" onclick="checkAdminPw()">🔓 ログイン</button>
+      <div id="admin-pw-error" style="color:var(--red);font-size:13px;text-align:center;margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- 管理者コンテンツ（認証後表示） -->
+  <div id="admin-content" style="display:none">
+
+    <!-- 商品追加フォーム -->
+    <div class="card">
+      <div class="card-head">➕ 新商品を追加</div>
+      <div class="card-body">
+        <div class="form-row">
+          <label>処理番号（6桁）</label>
+          <input type="tel" id="new-code" placeholder="例：712345" maxlength="6">
+        </div>
+        <div class="form-row">
+          <label>商品名</label>
+          <input type="text" id="new-name" placeholder="商品名を入力">
+        </div>
+        <div class="form-grid2">
+          <div class="form-row">
+            <label>単価（税抜）</label>
+            <input type="tel" id="new-price" placeholder="0" inputmode="numeric">
+          </div>
+          <div class="form-row">
+            <label>税率</label>
+            <select id="new-tax">
+              <option value="10">10%（標準）</option>
+              <option value="8">8%（飲食・軽減）</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>飲食品</label>
+          <select id="new-food">
+            <option value="false">いいえ（化粧品等）</option>
+            <option value="true">はい（飲料・サプリ等）</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="addNewProduct()">➕ 商品マスターに追加</button>
+      </div>
+    </div>
+
+    <!-- Excelファイルで一括追加 -->
+    <div class="card">
+      <div class="card-head">📤 Excelで一括追加</div>
+      <div class="card-body">
+        <p style="font-size:12px;color:var(--mu);margin-bottom:12px">
+          列順：処理番号 / 商品名 / 単価（税抜）/ 税率 / 飲食フラグ（TRUE/FALSE）
+        </p>
+        <div style="background:var(--pl);border-radius:8px;padding:10px;font-size:11px;color:var(--pd);margin-bottom:12px">
+          <b>Excelの列例：</b><br>
+          A列: 712345　B列: 新商品名　C列: 3000　D列: 10　E列: FALSE
+        </div>
+        <div class="upload-box" onclick="document.getElementById('master-upload').click()">
+          <div style="font-size:32px;margin-bottom:6px">📂</div>
+          <div style="font-weight:700;margin-bottom:4px">Excelファイルを選択</div>
+          <div style="font-size:12px;color:var(--mu)">.xlsx / .csv 対応</div>
+        </div>
+        <input type="file" id="master-upload" accept=".xlsx,.xls,.csv" style="display:none" onchange="uploadMaster(event)">
+        <div id="upload-status" style="margin-top:10px;font-size:13px"></div>
+      </div>
+    </div>
+
+    <!-- 現在の商品マスター一覧 -->
+    <div class="card">
+      <div class="card-head">
+        📋 商品マスター一覧
+        <span id="master-count-badge" style="margin-left:auto;background:var(--p);color:#fff;border-radius:10px;padding:2px 10px;font-size:11px"></span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div style="padding:10px 14px;display:flex;gap:8px">
+          <input type="text" id="master-search" placeholder="商品名・番号で検索..." oninput="renderMasterList(this.value)" style="flex:1;padding:8px 12px;font-size:14px">
+        </div>
+        <div id="master-list" style="max-height:400px;overflow-y:auto"></div>
+      </div>
+    </div>
+
+    <!-- 追加した商品をExcelで保存 -->
+    <button class="btn btn-success" onclick="exportMasterExcel()">📥 マスターをExcelで保存</button>
+    <button class="btn btn-outline" onclick="adminLogout()" style="margin-bottom:10px">🔒 ログアウト</button>
+  </div>
+</div>
+
 <!-- プレビューモーダル -->
 <div class="modal-overlay" id="preview-modal">
   <div class="modal">
@@ -353,6 +451,9 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
   </button>
   <button class="nav-btn" id="nav-daily" onclick="showPage('daily')">
     <span class="icon">📊</span>日計表
+  </button>
+  <button class="nav-btn" id="nav-admin" onclick="showPage('admin')">
+    <span class="icon">⚙️</span>管理
   </button>
 </nav>
 
@@ -637,6 +738,7 @@ function showPage(name) {
   if(name!=='scan') stopCamera();
   if(name==='receipt') updateSummary();
   if(name==='daily') renderDaily();
+  if(name==='admin'){ document.getElementById('admin-lock').style.display='block'; document.getElementById('admin-content').style.display='none'; document.getElementById('admin-pw').value=''; }
 }
 
 // ========== サジェスト ==========
@@ -1092,6 +1194,138 @@ function clearDaily() {
     renderDaily();
     toast('🗑 リセットしました');
   }
+}
+
+
+// ========== 管理者機能 ==========
+const ADMIN_PW = 'menard2024';
+let customProducts = JSON.parse(localStorage.getItem('menard_custom_products') || '{}');
+
+// 起動時にカスタム商品をMASTERにマージ
+Object.assign(MASTER, customProducts);
+
+function checkAdminPw() {
+  const pw = document.getElementById('admin-pw').value;
+  if (pw === ADMIN_PW) {
+    document.getElementById('admin-lock').style.display = 'none';
+    document.getElementById('admin-content').style.display = 'block';
+    renderMasterList('');
+    document.getElementById('master-count-badge').textContent = Object.keys(MASTER).length + '件';
+  } else {
+    document.getElementById('admin-pw-error').textContent = '❌ パスワードが違います';
+    document.getElementById('admin-pw').value = '';
+  }
+}
+
+function adminLogout() {
+  document.getElementById('admin-lock').style.display = 'block';
+  document.getElementById('admin-content').style.display = 'none';
+  document.getElementById('admin-pw').value = '';
+}
+
+function addNewProduct() {
+  const code = document.getElementById('new-code').value.trim();
+  const name = document.getElementById('new-name').value.trim();
+  const price = parseInt(document.getElementById('new-price').value) || 0;
+  const tax = parseInt(document.getElementById('new-tax').value);
+  const food = document.getElementById('new-food').value === 'true';
+
+  if (!code || code.length !== 6) { toast('⚠️ 処理番号は6桁で入力してください'); return; }
+  if (!name) { toast('⚠️ 商品名を入力してください'); return; }
+  if (MASTER[code]) {
+    if (!confirm(`処理番号 ${code} は既に「${MASTER[code].name}」として登録されています。上書きしますか？`)) return;
+  }
+
+  const product = { name, price, tax, food };
+  MASTER[code] = product;
+  customProducts[code] = product;
+  localStorage.setItem('menard_custom_products', JSON.stringify(customProducts));
+
+  document.getElementById('new-code').value = '';
+  document.getElementById('new-name').value = '';
+  document.getElementById('new-price').value = '';
+  document.getElementById('master-count-badge').textContent = Object.keys(MASTER).length + '件';
+  renderMasterList('');
+  toast('✅ ' + name + ' を追加しました（番号: ' + code + '）');
+}
+
+function uploadMaster(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1});
+      let added = 0, updated = 0;
+      rows.slice(1).forEach(row => {
+        if (!row[0] || !row[1]) return;
+        const code = String(row[0]).trim();
+        const name = String(row[1]).trim();
+        const price = parseInt(row[2]) || 0;
+        const tax = parseInt(row[3]) || 10;
+        const food = String(row[4]).toLowerCase() === 'true';
+        if (MASTER[code]) updated++;
+        else added++;
+        const product = {name, price, tax, food};
+        MASTER[code] = product;
+        customProducts[code] = product;
+      });
+      localStorage.setItem('menard_custom_products', JSON.stringify(customProducts));
+      document.getElementById('upload-status').innerHTML = `<span style="color:var(--ac);font-weight:600">✅ 追加: ${added}件 / 更新: ${updated}件</span>`;
+      document.getElementById('master-count-badge').textContent = Object.keys(MASTER).length + '件';
+      renderMasterList('');
+      toast('✅ マスター更新完了');
+    } catch(e) {
+      document.getElementById('upload-status').innerHTML = `<span style="color:var(--red)">❌ エラー: ${e.message}</span>`;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  event.target.value = '';
+}
+
+function renderMasterList(search) {
+  const entries = Object.entries(MASTER).filter(([code, p]) =>
+    !search || code.includes(search) || p.name.includes(search)
+  );
+  const isCustom = code => !!customProducts[code];
+
+  document.getElementById('master-list').innerHTML = entries.slice(0, 100).map(([code, p]) => `
+    <div style="padding:10px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">
+          ${p.name}
+          ${isCustom(code) ? '<span style="font-size:10px;background:#e8f5e9;color:#2d6a4f;padding:1px 6px;border-radius:6px;font-weight:700">追加</span>' : ''}
+        </div>
+        <div style="font-size:11px;color:var(--mu);margin-top:2px">${code} ／ ¥${p.price.toLocaleString()} ／ ${p.tax}%${p.food?' 🍵':''}</div>
+      </div>
+      ${isCustom(code) ? `<button onclick="deleteProduct('${code}')" style="background:#fee;border:1px solid #fcc;color:var(--red);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer">削除</button>` : ''}
+    </div>`
+  ).join('') + (entries.length > 100 ? `<div style="padding:10px;text-align:center;font-size:12px;color:var(--mu)">他 ${entries.length-100} 件...</div>` : '');
+}
+
+function deleteProduct(code) {
+  if (!confirm(`「${MASTER[code].name}」を削除しますか？`)) return;
+  delete MASTER[code];
+  delete customProducts[code];
+  localStorage.setItem('menard_custom_products', JSON.stringify(customProducts));
+  document.getElementById('master-count-badge').textContent = Object.keys(MASTER).length + '件';
+  renderMasterList(document.getElementById('master-search').value);
+  toast('🗑 削除しました');
+}
+
+function exportMasterExcel() {
+  const wb = XLSX.utils.book_new();
+  const data = [['処理番号','商品名','単価（税抜）','税率','飲食フラグ']];
+  Object.entries(MASTER).forEach(([code, p]) => {
+    data.push([code, p.name, p.price, p.tax, p.food ? 'TRUE' : 'FALSE']);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:12},{wch:36},{wch:14},{wch:8},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws, '商品マスター');
+  XLSX.writeFile(wb, 'menard_master_' + new Date().toISOString().split('T')[0] + '.xlsx');
+  toast('📥 マスターをダウンロードしました');
 }
 
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
