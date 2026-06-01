@@ -222,8 +222,19 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
 <!-- 領収書ページ -->
 <div class="page" id="page-receipt">
   <div class="card">
-    <div class="card-head">👤 宛名・日付</div>
+    <div class="card-head">👤 担当者・宛名・日付</div>
     <div class="card-body">
+      <div class="form-row">
+        <label>担当者</label>
+        <select id="staff-select">
+          <option value="長嶺">０ 長嶺</option>
+          <option value="澤岻">１ 澤岻</option>
+          <option value="山城">２ 山城</option>
+          <option value="又吉">３ 又吉</option>
+          <option value="德元">４ 德元</option>
+          <option value="その他">５ その他</option>
+        </select>
+      </div>
       <div class="form-row">
         <label>宛名</label>
         <input type="text" id="recipient" placeholder="〇〇　様">
@@ -262,6 +273,27 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
   <button class="btn btn-success" onclick="exportExcel()">📥 Excel出力</button>
 </div>
 
+
+<!-- 日計表ページ -->
+<div class="page" id="page-daily">
+  <div class="card">
+    <div class="card-head">📊 本日の日計表</div>
+    <div class="card-body">
+      <div id="daily-summary" style="font-size:14px;color:var(--mu);text-align:center;padding:20px">
+        領収書を発行すると日計が表示されます
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head">🧾 本日の発行一覧</div>
+    <div class="card-body" id="daily-list">
+      <div class="empty-state">まだ発行がありません</div>
+    </div>
+  </div>
+  <button class="btn btn-success" onclick="exportDailyExcel()">📥 日計表をExcel出力</button>
+  <button class="btn btn-danger-sm" style="width:100%;justify-content:center;margin-bottom:10px" onclick="clearDaily()">🗑 日計をリセット</button>
+</div>
+
 <!-- プレビューモーダル -->
 <div class="modal-overlay" id="preview-modal">
   <div class="modal">
@@ -285,6 +317,9 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
   <button class="nav-btn" id="nav-receipt" onclick="showPage('receipt')" style="position:relative">
     <span class="icon">🧾</span>領収書
     <span class="badge-count" id="item-count" style="display:none">0</span>
+  </button>
+  <button class="nav-btn" id="nav-daily" onclick="showPage('daily')">
+    <span class="icon">📊</span>日計表
   </button>
 </nav>
 
@@ -457,6 +492,7 @@ function showPage(name) {
   document.getElementById('nav-'+name).classList.add('active');
   if(name!=='scan') stopCamera();
   if(name==='receipt') updateSummary();
+  if(name==='daily') renderDaily();
 }
 
 // ========== サジェスト ==========
@@ -776,7 +812,142 @@ function exportExcel(){
   const date=document.getElementById('issue-date').value;
   const rno=document.getElementById('receipt-no').value;
   XLSX.writeFile(wb,`領収書_${rno}_${date}.xlsx`);
+  saveToDailyRecord();
   toast('📥 ダウンロードしました');
+}
+
+
+// ========== 日計表 ==========
+let dailyRecords = JSON.parse(localStorage.getItem('menard_daily') || '[]');
+
+function saveToDailyRecord() {
+  const c = calcTotals();
+  const staff = document.getElementById('staff-select').value;
+  const recipient = document.getElementById('recipient').value || '−';
+  const rno = document.getElementById('receipt-no').value;
+  const date = document.getElementById('issue-date').value;
+  const record = {
+    rno, date, staff, recipient,
+    subtotal: Math.floor(c.subtotal),
+    discount: Math.floor(c.totalDiscount),
+    tax8: c.tax8, tax10: c.tax10,
+    direct: c.directTotal,
+    total: c.total,
+    items: items.map(i => ({...i})),
+    time: new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})
+  };
+  dailyRecords.push(record);
+  localStorage.setItem('menard_daily', JSON.stringify(dailyRecords));
+}
+
+function renderDaily() {
+  const today = new Date().toISOString().split('T')[0];
+  const todayRecs = dailyRecords.filter(r => r.date === today);
+
+  if (!todayRecs.length) {
+    document.getElementById('daily-summary').innerHTML = '<div style="text-align:center;color:var(--mu);padding:20px">本日の発行はまだありません</div>';
+    document.getElementById('daily-list').innerHTML = '<div class="empty-state">まだ発行がありません</div>';
+    return;
+  }
+
+  // 集計
+  const totalSales = todayRecs.reduce((s,r) => s + r.total, 0);
+  const totalDiscount = todayRecs.reduce((s,r) => s + r.discount, 0);
+  const tax8total = todayRecs.reduce((s,r) => s + r.tax8, 0);
+  const tax10total = todayRecs.reduce((s,r) => s + r.tax10, 0);
+  const byStaff = {};
+  todayRecs.forEach(r => {
+    byStaff[r.staff] = (byStaff[r.staff] || 0) + r.total;
+  });
+
+  // サマリー表示
+  const staffRows = Object.entries(byStaff).map(([s,v]) =>
+    `<div class="sum-row"><span>　${s}</span><span>¥${v.toLocaleString()}</span></div>`
+  ).join('');
+
+  document.getElementById('daily-summary').innerHTML = `
+    <div class="summary-card">
+      <div class="sum-row"><span>📋 発行枚数</span><span>${todayRecs.length}枚</span></div>
+      <div class="sum-row discount"><span>値引き合計</span><span>-¥${totalDiscount.toLocaleString()}</span></div>
+      <div class="sum-row"><span>消費税8%合計</span><span>¥${tax8total.toLocaleString()}</span></div>
+      <div class="sum-row"><span>消費税10%合計</span><span>¥${tax10total.toLocaleString()}</span></div>
+      <div class="sum-row" style="border-top:1px solid var(--bd);padding-top:8px;margin-top:4px"><span>担当者別売上</span><span></span></div>
+      ${staffRows}
+      <div class="sum-row total"><span>本日合計（税込）</span><span>¥${totalSales.toLocaleString()}</span></div>
+    </div>`;
+
+  // 一覧表示
+  document.getElementById('daily-list').innerHTML = todayRecs.map((r, i) => `
+    <div class="item-row">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:12px;color:var(--mu)">${r.time} ${r.rno}</span>
+        <span class="tax-badge" style="background:var(--pl);color:var(--pd)">${r.staff}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px">${r.recipient} 様</span>
+        <span style="font-weight:700;color:var(--pd);font-size:16px">¥${r.total.toLocaleString()}</span>
+      </div>
+      ${r.discount>0?`<div style="font-size:11px;color:var(--red)">値引き -¥${r.discount.toLocaleString()}</div>`:''}
+    </div>`).join('');
+}
+
+function exportDailyExcel() {
+  const today = new Date().toISOString().split('T')[0];
+  const todayRecs = dailyRecords.filter(r => r.date === today);
+  if (!todayRecs.length) { toast('⚠️ 本日の発行データがありません'); return; }
+
+  const totalSales = todayRecs.reduce((s,r) => s + r.total, 0);
+  const totalDiscount = todayRecs.reduce((s,r) => s + r.discount, 0);
+  const tax8total = todayRecs.reduce((s,r) => s + r.tax8, 0);
+  const tax10total = todayRecs.reduce((s,r) => s + r.tax10, 0);
+
+  const wb = XLSX.utils.book_new();
+
+  // 日計サマリーシート
+  const summary = [
+    ['メナード北谷美浜店　日計表'],
+    ['集計日', today],[''],
+    ['発行枚数', todayRecs.length + '枚'],
+    ['値引き合計', -totalDiscount],
+    ['消費税8%合計', tax8total],
+    ['消費税10%合計', tax10total],
+    ['本日合計（税込）', totalSales],[''],
+    ['担当者別売上'],
+  ];
+  const byStaff = {};
+  todayRecs.forEach(r => { byStaff[r.staff] = (byStaff[r.staff] || 0) + r.total; });
+  Object.entries(byStaff).forEach(([s,v]) => summary.push([s, v]));
+  summary.push(['']);
+  summary.push(['時刻', '領収書番号', '担当者', '宛名', '売上（税込）', '値引き', '消費税8%', '消費税10%']);
+  todayRecs.forEach(r => summary.push([r.time, r.rno, r.staff, r.recipient, r.total, -r.discount, r.tax8, r.tax10]));
+
+  const ws = XLSX.utils.aoa_to_sheet(summary);
+  ws['!cols'] = [{wch:14},{wch:20},{wch:10},{wch:16},{wch:14},{wch:12},{wch:12},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws, '日計表');
+
+  // 明細シート
+  const detail = [['領収書番号','担当者','商品名','単価','数量','割引率','税率','小計（税込）']];
+  todayRecs.forEach(r => {
+    r.items.forEach(item => {
+      const sub = item.isDirect ? item.price : Math.floor(item.price*(1-item.discount/100)*item.qty*(1+item.tax/100));
+      detail.push([r.rno, r.staff, item.name, item.isDirect?'直接入力':item.price, item.qty, item.discount+'%', item.isDirect?'税込':item.tax+'%', sub]);
+    });
+  });
+  const ws2 = XLSX.utils.aoa_to_sheet(detail);
+  ws2['!cols'] = [{wch:20},{wch:10},{wch:30},{wch:10},{wch:6},{wch:8},{wch:8},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws2, '明細');
+
+  XLSX.writeFile(wb, `日計表_${today}.xlsx`);
+  toast('📥 日計表をダウンロードしました');
+}
+
+function clearDaily() {
+  if (confirm('本日の日計データをリセットしますか？')) {
+    dailyRecords = dailyRecords.filter(r => r.date !== new Date().toISOString().split('T')[0]);
+    localStorage.setItem('menard_daily', JSON.stringify(dailyRecords));
+    renderDaily();
+    toast('🗑 リセットしました');
+  }
 }
 
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
