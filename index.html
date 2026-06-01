@@ -152,17 +152,18 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
 </head>
 <body>
 
-<div class="header">
-  <h1>🌸 メナード北谷美浜店</h1>
-  <p>領収書発行システム</p>
+<div class="header" style="display:flex;align-items:center;justify-content:space-between">
+  <div>
+    <h1>🌸 メナード北谷美浜店</h1>
+    <p>領収書発行システム</p>
+  </div>
+  <button onclick="showInstallGuide()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);color:#fff;border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;white-space:nowrap">
+    📱 ホーム画面<br>に追加
+  </button>
 </div>
 
 <!-- スキャンページ -->
 
-<div id="install-banner" style="display:none;background:#8a5c00;color:#fff;padding:10px 14px;font-size:12px;text-align:center;position:relative">
-  📲 ホーム画面に追加すると便利です！　Safari下部の「共有」→「ホーム画面に追加」
-  <button onclick="document.getElementById('install-banner').style.display='none'" style="background:none;border:none;color:#fff;font-size:16px;position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer">✕</button>
-</div>
 <div class="page active" id="page-scan">
 
   <!-- 入力欄 -->
@@ -436,6 +437,91 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
     <!-- 追加した商品をExcelで保存 -->
     <button class="btn btn-success" onclick="exportMasterExcel()">📥 マスターをExcelで保存</button>
     <button class="btn btn-outline" onclick="adminLogout()" style="margin-bottom:10px">🔒 ログアウト</button>
+  </div>
+</div>
+
+
+<!-- ホーム画面追加ガイド -->
+<div id="install-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9000;padding:20px;overflow-y:auto">
+  <div style="background:#fff;border-radius:16px;max-width:400px;margin:40px auto;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#8a5c00,#c8860a);color:#fff;padding:16px;text-align:center">
+      <div style="font-size:36px;margin-bottom:6px">📱</div>
+      <div style="font-weight:700;font-size:18px">ホーム画面に追加する方法</div>
+    </div>
+    <div style="padding:20px">
+
+      <!-- Safari用 -->
+      <div id="guide-safari">
+        <div style="background:#e8f5e9;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:#2d6a4f;font-weight:600;text-align:center">
+          ✅ Safariで開いています。以下の手順で追加できます！
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px">
+          <div style="background:#c8860a;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">1</div>
+          <div>
+            <div style="font-weight:700;margin-bottom:4px">画面下部の「共有」ボタンをタップ</div>
+            <div style="font-size:32px;text-align:center;background:#f5f5f5;border-radius:8px;padding:8px">
+              <span style="display:inline-block;border:1px solid #ccc;border-radius:6px;padding:4px 10px;font-size:24px">⎙</span>
+            </div>
+            <div style="font-size:12px;color:#888;margin-top:4px">※ iPhoneの画面一番下中央にあります</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px">
+          <div style="background:#c8860a;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">2</div>
+          <div>
+            <div style="font-weight:700;margin-bottom:4px">メニューを下にスクロール</div>
+            <div style="font-size:13px;color:#666">共有メニューが開いたら、下の方にスクロールします</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px">
+          <div style="background:#c8860a;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">3</div>
+          <div>
+            <div style="font-weight:700;margin-bottom:4px">「ホーム画面に追加」をタップ</div>
+            <div style="background:#f5f5f5;border-radius:8px;padding:8px;font-size:13px;display:flex;align-items:center;gap:8px">
+              <span style="font-size:20px">➕</span>
+              <span style="font-weight:600">ホーム画面に追加</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:20px">
+          <div style="background:#c8860a;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">4</div>
+          <div>
+            <div style="font-weight:700;margin-bottom:4px">右上の「追加」をタップ</div>
+            <div style="font-size:13px;color:#666">名前は「メナード領収書」のまま「追加」をタップ</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chrome用 -->
+      <div id="guide-chrome" style="display:none">
+        <div style="background:#fff3cd;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:#856404;font-weight:600;text-align:center">
+          ⚠️ ChromeではホームO画面追加ができません
+        </div>
+        <div style="font-size:14px;color:#333;margin-bottom:12px;line-height:1.8">
+          iPhoneでホーム画面に追加するには<b>Safari</b>で開く必要があります。
+        </div>
+        <div style="background:#f5f5f5;border-radius:10px;padding:12px;margin-bottom:16px">
+          <div style="font-weight:700;margin-bottom:8px">Safariで開く方法：</div>
+          <div style="font-size:13px;line-height:1.9">
+            ① このURLをコピー<br>
+            <div style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:8px;font-size:12px;word-break:break-all;margin:6px 0">
+              https://receipt-app-eight-chi.vercel.app
+            </div>
+            ② iPhoneの<b>Safari</b>を開く<br>
+            ③ URLバーに貼り付けてアクセス<br>
+            ④ Safari下部の「共有」→「ホーム画面に追加」
+          </div>
+        </div>
+        <button onclick="copyURL()" style="width:100%;padding:12px;background:#c8860a;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px">
+          📋 URLをコピー
+        </button>
+      </div>
+
+    </div>
+    <div style="padding:0 20px 20px">
+      <button onclick="document.getElementById('install-modal').style.display='none'" style="width:100%;padding:12px;background:#f5f5f5;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer">
+        閉じる
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1217,6 +1303,30 @@ function clearDaily() {
 }
 
 
+
+
+// ========== ホーム画面追加ガイド ==========
+function showInstallGuide() {
+  const isChrome = /CriOS/.test(navigator.userAgent);
+  document.getElementById('guide-safari').style.display = isChrome ? 'none' : 'block';
+  document.getElementById('guide-chrome').style.display = isChrome ? 'block' : 'none';
+  document.getElementById('install-modal').style.display = 'block';
+}
+
+function copyURL() {
+  const url = 'https://receipt-app-eight-chi.vercel.app';
+  if(navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => toast('📋 URLをコピーしました'));
+  } else {
+    const el = document.createElement('textarea');
+    el.value = url;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    toast('📋 URLをコピーしました');
+  }
+}
 
 // ========== 印刷機能 ==========
 function buildReceiptHTML() {
