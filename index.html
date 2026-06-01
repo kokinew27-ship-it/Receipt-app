@@ -23,45 +23,77 @@ body{font-family:-apple-system,'Hiragino Sans',sans-serif;background:var(--bg);c
 .card-head{background:var(--pl);padding:11px 14px;font-weight:700;font-size:13px;color:var(--pd);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:6px;}
 .card-body{padding:14px;}
 label{display:block;font-size:12px;font-weight:600;color:var(--mu);margin-bottom:5px;}
-input,select{width:100%;padding:12px 14px;border:1.5px solid var(--bd);border-radius:10px;font-size:16px;color:var(--tx);background:#fff;outline:none;-webkit-appearance:none;}
+input[type=text],input[type=tel],input[type=number],input[type=date],select{width:100%;padding:12px 14px;border:1.5px solid var(--bd);border-radius:10px;font-size:16px;color:var(--tx);background:#fff;outline:none;-webkit-appearance:none;}
 input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134,10,.12);}
 .form-row{margin-bottom:12px;}
 .form-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.tabs{display:flex;background:#f0ebe0;border-radius:10px;padding:3px;margin-bottom:14px;}
-.tab{flex:1;text-align:center;padding:8px;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;color:var(--mu);}
-.tab.active{background:#fff;color:var(--pd);box-shadow:0 1px 4px rgba(0,0,0,.1);}
+.form-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+
+/* 確認パネル */
+.confirm-panel{background:linear-gradient(135deg,#fff9ee,#fff3d6);border:2px solid var(--p);border-radius:14px;padding:14px;margin-bottom:14px;display:none;}
+.confirm-panel.show{display:block;}
+.confirm-title{font-weight:700;font-size:14px;color:var(--pd);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.confirm-name{font-size:16px;font-weight:700;margin-bottom:10px;color:var(--tx);}
+.confirm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.confirm-field label{font-size:11px;color:var(--mu);font-weight:600;margin-bottom:3px;}
+.confirm-field input,
+.confirm-field select{padding:9px 10px;font-size:15px;}
+.direct-row{display:flex;align-items:center;gap:10px;background:#fff;border-radius:10px;padding:10px 12px;border:1.5px solid var(--bd);margin-bottom:10px;}
+.direct-row label{margin:0;font-size:13px;font-weight:600;color:var(--tx);white-space:nowrap;}
+.toggle-switch{position:relative;width:44px;height:26px;flex-shrink:0;}
+.toggle-switch input{opacity:0;width:0;height:0;}
+.slider{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:26px;transition:.3s;}
+.slider:before{position:absolute;content:'';height:20px;width:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;}
+input:checked+.slider{background:var(--p);}
+input:checked+.slider:before{transform:translateX(18px);}
+.direct-input-wrap{display:none;margin-top:6px;}
+.direct-input-wrap.show{display:block;}
+.direct-input-wrap input{border-color:var(--p);font-size:18px;font-weight:700;text-align:right;}
+.tax-selector{display:flex;gap:6px;}
+.tax-opt{flex:1;padding:8px;text-align:center;border:2px solid var(--bd);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;color:var(--mu);}
+.tax-opt.selected-10{border-color:#1a56a0;background:#e8f0fe;color:#1a56a0;}
+.tax-opt.selected-8{border-color:#2d6a4f;background:#d8f3dc;color:#2d6a4f;}
+.btn-add-confirm{width:100%;padding:13px;background:var(--p);color:#fff;border:none;border-radius:11px;font-size:16px;font-weight:700;cursor:pointer;}
+.btn-add-confirm:active{opacity:.85;}
+
+/* サジェスト */
+.suggest-list{background:#fff;border:1.5px solid var(--p);border-radius:10px;margin-top:4px;max-height:180px;overflow-y:auto;}
+.suggest-item{padding:11px 14px;border-bottom:1px solid var(--bd);cursor:pointer;font-size:14px;}
+.suggest-item:last-child{border-bottom:none;}
+.suggest-item:active{background:var(--pl);}
+.suggest-code{font-size:11px;color:var(--mu);margin-top:2px;}
 
 /* カメラ */
 .camera-wrap{position:relative;border-radius:12px;overflow:hidden;background:#000;margin-bottom:10px;display:none;}
 #camera-view{width:100%;display:block;max-height:260px;object-fit:cover;}
 .camera-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;}
-.scan-frame{width:200px;height:120px;border:3px solid rgba(200,134,10,0.9);border-radius:8px;box-shadow:0 0 0 2000px rgba(0,0,0,0.4);}
-.scan-hint-text{color:#fff;font-size:12px;margin-top:10px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.8);}
+.scan-frame{width:200px;height:100px;border:3px solid rgba(200,134,10,0.9);border-radius:8px;box-shadow:0 0 0 2000px rgba(0,0,0,0.45);}
+.scan-hint-text{color:#fff;font-size:12px;margin-top:8px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.8);}
 .capture-btn-wrap{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);}
-.capture-btn{width:60px;height:60px;border-radius:50%;background:#fff;border:4px solid var(--p);font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);}
-.capture-btn:active{transform:scale(0.92);}
+.capture-btn{width:62px;height:62px;border-radius:50%;background:#fff;border:4px solid var(--p);font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.capture-btn:active{transform:scale(.9);}
 
-/* 商品リスト */
+/* 明細 */
 .item-row{background:#fff;border-radius:10px;border:1px solid var(--bd);padding:10px 12px;margin-bottom:8px;position:relative;}
-.item-name{font-weight:600;font-size:14px;margin-bottom:6px;padding-right:28px;}
-.item-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.item-name{font-weight:600;font-size:14px;margin-bottom:5px;padding-right:28px;}
+.item-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px;}
 .item-price{color:var(--pd);font-weight:700;font-size:15px;}
 .tax-badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;}
 .tax-8{background:#d8f3dc;color:#2d6a4f;}
 .tax-10{background:#e8f0fe;color:#1a56a0;}
 .disc-badge{font-size:11px;color:var(--red);font-weight:600;}
+.direct-badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;background:#f3e6ff;color:#6a1a9a;}
 .item-del{position:absolute;top:10px;right:10px;background:#fee;border:none;color:var(--red);width:26px;height:26px;border-radius:50%;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .qty-ctrl{display:flex;align-items:center;border:1.5px solid var(--bd);border-radius:8px;overflow:hidden;}
 .qty-ctrl button{background:var(--pl);border:none;width:34px;height:36px;font-size:18px;color:var(--pd);cursor:pointer;font-weight:700;}
 .qty-ctrl span{width:38px;text-align:center;font-size:15px;font-weight:600;}
 .empty-state{text-align:center;color:var(--mu);padding:30px 20px;font-size:14px;}
 
-/* サジェスト */
-.suggest-list{background:#fff;border:1.5px solid var(--p);border-radius:10px;margin-top:4px;max-height:200px;overflow-y:auto;}
-.suggest-item{padding:11px 14px;border-bottom:1px solid var(--bd);cursor:pointer;font-size:14px;}
-.suggest-item:last-child{border-bottom:none;}
-.suggest-item:active{background:var(--pl);}
-.suggest-code{font-size:11px;color:var(--mu);margin-top:2px;}
+/* サマリー */
+.summary-card{background:var(--pl);border-radius:12px;padding:14px;}
+.sum-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;}
+.sum-row.discount{color:var(--red);font-weight:600;}
+.sum-row.total{font-size:20px;font-weight:700;color:var(--pd);border-top:1px solid var(--bd);padding-top:10px;margin-top:4px;}
 
 /* ボタン */
 .btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:10px;}
@@ -72,12 +104,6 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
 .btn-cam{background:var(--pd);color:#fff;}
 .btn-sm{padding:9px 14px;font-size:13px;width:auto;border-radius:8px;display:inline-flex;}
 .btn-danger{background:#fee;border:1.5px solid #fcc;color:var(--red);}
-
-/* サマリー */
-.summary-card{background:var(--pl);border-radius:12px;padding:14px;}
-.sum-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;}
-.sum-row.discount{color:var(--red);font-weight:600;}
-.sum-row.total{font-size:20px;font-weight:700;color:var(--pd);border-top:1px solid var(--bd);padding-top:10px;margin-top:4px;}
 
 /* モーダル */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;overflow-y:auto;padding:16px;}
@@ -100,7 +126,6 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
 </style>
 </head>
 <body>
-
 <div class="header">
   <h1>🌸 メナード北谷美浜店</h1>
   <p>領収書発行システム</p>
@@ -108,80 +133,93 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
 
 <!-- スキャンページ -->
 <div class="page active" id="page-scan">
+
+  <!-- 確認・編集パネル -->
+  <div class="confirm-panel" id="confirm-panel">
+    <div class="confirm-title">✅ 商品確認・編集</div>
+    <div class="confirm-name" id="confirm-name">-</div>
+
+    <!-- 直接入力トグル -->
+    <div class="direct-row">
+      <label>💴 金額を直接入力</label>
+      <label class="toggle-switch">
+        <input type="checkbox" id="direct-toggle" onchange="toggleDirect()">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="direct-input-wrap" id="direct-input-wrap">
+      <label>税込金額を直接入力</label>
+      <input type="tel" id="direct-amount" placeholder="0" inputmode="numeric">
+    </div>
+
+    <!-- 通常入力 -->
+    <div id="normal-inputs">
+      <div class="confirm-grid">
+        <div class="confirm-field form-row">
+          <label>単価（税抜）</label>
+          <input type="tel" id="c-price" inputmode="numeric">
+        </div>
+        <div class="confirm-field form-row">
+          <label>数量</label>
+          <input type="tel" id="c-qty" value="1" inputmode="numeric">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>割引率（%）</label>
+        <input type="tel" id="c-discount" value="0" inputmode="numeric" placeholder="0">
+      </div>
+      <div class="form-row">
+        <label>税率</label>
+        <div class="tax-selector">
+          <div class="tax-opt selected-10" id="tax-opt-10" onclick="selectTax(10)">10%（標準）</div>
+          <div class="tax-opt" id="tax-opt-8" onclick="selectTax(8)">8%（飲食）</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-add-confirm" onclick="addFromConfirm()">＋ 明細に追加</button>
+  </div>
+
   <div class="card">
     <div class="card-head">📦 商品追加</div>
     <div class="card-body">
-      <div class="tabs">
-        <div class="tab active" onclick="switchTab('scan')">📷 スキャン</div>
-        <div class="tab" onclick="switchTab('manual')">✏️ 手入力</div>
+
+      <!-- 処理番号入力 -->
+      <div class="form-row">
+        <label>処理番号（6桁）を入力またはスキャン</label>
+        <div style="display:flex;gap:8px">
+          <input type="tel" id="barcode-input" placeholder="例：711609" maxlength="10" style="flex:1" oninput="onCodeInput(this.value)" onkeydown="if(event.key==='Enter')searchByCode()">
+          <button onclick="searchByCode()" style="background:var(--p);color:#fff;border:none;border-radius:10px;padding:0 18px;font-size:20px;font-weight:700;cursor:pointer;">→</button>
+        </div>
+        <div id="suggest-box"></div>
       </div>
 
-      <!-- スキャンタブ -->
-      <div id="tab-scan">
-        <div class="form-row">
-          <label>処理番号（6桁）を入力</label>
-          <div style="display:flex;gap:8px">
-            <input type="tel" id="barcode-input" placeholder="例：711609" maxlength="10" style="flex:1" oninput="onCodeInput(this.value)" onkeydown="if(event.key==='Enter')searchByCode()">
-            <button onclick="searchByCode()" style="background:var(--p);color:#fff;border:none;border-radius:10px;padding:0 16px;font-size:20px;font-weight:700;cursor:pointer;white-space:nowrap">→</button>
-          </div>
-          <div id="suggest-box"></div>
+      <button class="btn btn-cam" onclick="toggleCamera()" style="margin-bottom:8px">
+        <span id="cam-icon">📷</span> <span id="cam-text">カメラを起動</span>
+      </button>
+      <div class="camera-wrap" id="camera-wrap">
+        <video id="camera-view" autoplay playsinline muted></video>
+        <div class="camera-overlay">
+          <div class="scan-frame"></div>
+          <div class="scan-hint-text">バーコードを枠内に合わせて📸ボタンを押す</div>
         </div>
-        <button class="btn btn-cam" onclick="toggleCamera()">
-          <span id="cam-icon">📷</span> <span id="cam-text">カメラを起動</span>
-        </button>
-        <div class="camera-wrap" id="camera-wrap">
-          <video id="camera-view" autoplay playsinline muted></video>
-          <div class="camera-overlay">
-            <div class="scan-frame"></div>
-            <div class="scan-hint-text">バーコードを枠内に合わせて撮影ボタンを押す</div>
-          </div>
-          <div class="capture-btn-wrap">
-            <button class="capture-btn" onclick="captureAndScan()">📸</button>
-          </div>
+        <div class="capture-btn-wrap">
+          <button class="capture-btn" onclick="captureAndScan()">📸</button>
         </div>
-        <canvas id="camera-canvas" style="display:none"></canvas>
-        <div id="scan-status" style="text-align:center;font-size:12px;color:var(--mu);margin-top:6px"></div>
       </div>
+      <canvas id="camera-canvas" style="display:none"></canvas>
+      <div id="scan-status" style="text-align:center;font-size:12px;color:var(--mu);margin-top:4px"></div>
 
-      <!-- 手入力タブ -->
-      <div id="tab-manual" style="display:none">
-        <div class="form-row">
-          <label>処理番号（任意）</label>
-          <input type="tel" id="m-code" placeholder="711609" oninput="onManualCodeInput(this.value)">
-          <div id="m-suggest-box"></div>
-        </div>
-        <div class="form-row">
-          <label>商品名</label>
-          <input type="text" id="m-name" placeholder="商品名を入力">
-        </div>
-        <div class="form-grid2">
-          <div class="form-row">
-            <label>単価（税抜）</label>
-            <input type="number" id="m-price" placeholder="0" inputmode="numeric">
-          </div>
-          <div class="form-row">
-            <label>数量</label>
-            <input type="number" id="m-qty" value="1" min="1" inputmode="numeric">
-          </div>
-        </div>
-        <div class="form-grid2">
-          <div class="form-row">
-            <label>税率</label>
-            <select id="m-tax">
-              <option value="10">10%（標準）</option>
-              <option value="8">8%（軽減）</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <label>割引率（%）</label>
-            <input type="number" id="m-discount" value="0" min="0" max="100" inputmode="numeric">
-          </div>
-        </div>
-        <button class="btn btn-primary" onclick="addManualItem()">＋ 追加</button>
+      <!-- 商品名検索 -->
+      <div class="form-row" style="margin-top:10px">
+        <label>商品名で検索</label>
+        <input type="text" id="name-search" placeholder="例：クレンジング" oninput="onNameSearch(this.value)">
+        <div id="name-suggest-box"></div>
       </div>
     </div>
   </div>
 
+  <!-- 明細 -->
   <div class="card">
     <div class="card-head">
       🛍️ 明細
@@ -198,23 +236,11 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
   <div class="card">
     <div class="card-head">👤 宛名・日付</div>
     <div class="card-body">
-      <div class="form-row">
-        <label>宛名</label>
-        <input type="text" id="recipient" placeholder="〇〇　様">
-      </div>
-      <div class="form-row">
-        <label>但し書き</label>
-        <input type="text" id="purpose" value="化粧品代として">
-      </div>
+      <div class="form-row"><label>宛名</label><input type="text" id="recipient" placeholder="〇〇　様"></div>
+      <div class="form-row"><label>但し書き</label><input type="text" id="purpose" value="化粧品代として"></div>
       <div class="form-grid2">
-        <div class="form-row">
-          <label>発行日</label>
-          <input type="date" id="issue-date">
-        </div>
-        <div class="form-row">
-          <label>領収書番号</label>
-          <input type="text" id="receipt-no">
-        </div>
+        <div class="form-row"><label>発行日</label><input type="date" id="issue-date"></div>
+        <div class="form-row"><label>領収書番号</label><input type="text" id="receipt-no"></div>
       </div>
     </div>
   </div>
@@ -239,9 +265,7 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
 <!-- プレビューモーダル -->
 <div class="modal-overlay" id="preview-modal">
   <div class="modal">
-    <div class="modal-head">領収書プレビュー
-      <button class="modal-close" onclick="closePreview()">✕</button>
-    </div>
+    <div class="modal-head">領収書プレビュー<button class="modal-close" onclick="closePreview()">✕</button></div>
     <div class="modal-body">
       <div class="receipt" id="receipt-content"></div>
       <div style="margin-top:16px">
@@ -253,19 +277,13 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
 </div>
 
 <nav class="bottom-nav">
-  <button class="nav-btn active" id="nav-scan" onclick="showPage('scan')">
-    <span class="icon">📷</span>スキャン
-  </button>
-  <button class="nav-btn" id="nav-receipt" onclick="showPage('receipt')" style="position:relative">
-    <span class="icon">🧾</span>領収書
-    <span class="badge-count" id="item-count" style="display:none">0</span>
-  </button>
+  <button class="nav-btn active" id="nav-scan" onclick="showPage('scan')"><span class="icon">📷</span>スキャン</button>
+  <button class="nav-btn" id="nav-receipt" onclick="showPage('receipt')" style="position:relative"><span class="icon">🧾</span>領収書<span class="badge-count" id="item-count" style="display:none">0</span></button>
 </nav>
-
 <div id="toast"></div>
 
 <script>
-// ========== 商品マスター（内蔵） ==========
+// ========== 商品マスター（飲食フラグ付き） ==========
 const MASTER = {
 "711609":{"name":"TKクレンジング","price":2500,"tax":10},
 "711623":{"name":"TKウォッシング","price":2500,"tax":10},
@@ -389,7 +407,7 @@ const MASTER = {
 "735865":{"name":"薬用ベースクリーム","price":4000,"tax":10},
 "737692":{"name":"JPワンタッチリップ","price":4700,"tax":10},
 "599665":{"name":"シェービング for men","price":2000,"tax":10},
-"700108":{"name":"レイシ人参ゴールド","price":500,"tax":10},
+"700108":{"name":"レイシ人参ゴールド","price":500,"tax":8},
 "712057":{"name":"クロワヘアエッセンス","price":3000,"tax":10},
 "712156":{"name":"オーセントリキッド","price":70000,"tax":10},
 "734424":{"name":"TKパウダーファンデーション","price":4000,"tax":10},
@@ -401,19 +419,19 @@ const MASTER = {
 "712576":{"name":"薬用ラインズリセット","price":20000,"tax":10},
 "323406":{"name":"クロワブローミスト","price":2000,"tax":10},
 "711942":{"name":"リラタビボディーシャンプー２点セット","price":3300,"tax":10},
-"700009":{"name":"霊視ジンジャー","price":3500,"tax":10},
+"700009":{"name":"霊視ジンジャー","price":3500,"tax":8},
 "711098":{"name":"キッズブロックUV","price":2000,"tax":10},
 "711494":{"name":"UVプロテクト","price":3000,"tax":10},
 "710985":{"name":"オーセントマスク（パック）","price":6000,"tax":10},
 "712668":{"name":"ラインズリセットパック","price":10000,"tax":10},
-"336642":{"name":"サ）リシ・パウチ容器","price":0,"tax":10},
-"700009":{"name":"霊視ジンジャー","price":3500,"tax":10}
+"336642":{"name":"サ）リシ・パウチ容器","price":0,"tax":10}
 };
 
 // ========== STATE ==========
 let items = [];
 let cameraActive = false;
 let stream = null;
+let currentTax = 10;
 
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', () => {
@@ -422,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('receipt-no').value = 'R' + today.getFullYear() + String(today.getMonth()+1).padStart(2,'0') + String(today.getDate()).padStart(2,'0') + '-' + String(Math.floor(Math.random()*1000)).padStart(3,'0');
 });
 
-// ========== NAVIGATION ==========
+// ========== NAV ==========
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
@@ -432,22 +450,77 @@ function showPage(name) {
   if(name==='receipt') updateSummary();
 }
 
-function switchTab(name) {
-  document.querySelectorAll('.tabs .tab').forEach((t,i)=>t.classList.toggle('active',['scan','manual'][i]===name));
-  document.getElementById('tab-scan').style.display = name==='scan'?'block':'none';
-  document.getElementById('tab-manual').style.display = name==='manual'?'block':'none';
+// ========== 確認パネル ==========
+function showConfirmPanel(name, price, tax) {
+  currentTax = tax;
+  document.getElementById('confirm-name').textContent = name;
+  document.getElementById('c-price').value = price;
+  document.getElementById('c-qty').value = 1;
+  document.getElementById('c-discount').value = 0;
+  document.getElementById('direct-toggle').checked = false;
+  document.getElementById('direct-input-wrap').classList.remove('show');
+  document.getElementById('normal-inputs').style.display = 'block';
+  selectTax(tax);
+  const panel = document.getElementById('confirm-panel');
+  panel.classList.add('show');
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
-// ========== 処理番号入力サジェスト ==========
+function selectTax(val) {
+  currentTax = val;
+  document.getElementById('tax-opt-10').className = 'tax-opt' + (val===10?' selected-10':'');
+  document.getElementById('tax-opt-8').className = 'tax-opt' + (val===8?' selected-8':'');
+}
+
+function toggleDirect() {
+  const on = document.getElementById('direct-toggle').checked;
+  document.getElementById('direct-input-wrap').classList.toggle('show', on);
+  document.getElementById('normal-inputs').style.display = on ? 'none' : 'block';
+  if(on) {
+    const price = parseInt(document.getElementById('c-price').value)||0;
+    const tax = currentTax;
+    const taxInc = Math.floor(price * (1 + tax/100));
+    document.getElementById('direct-amount').value = taxInc;
+    setTimeout(()=>document.getElementById('direct-amount').focus(),100);
+  }
+}
+
+function addFromConfirm() {
+  const name = document.getElementById('confirm-name').textContent;
+  const isDirect = document.getElementById('direct-toggle').checked;
+
+  if(isDirect) {
+    const taxInc = parseInt(document.getElementById('direct-amount').value)||0;
+    if(!taxInc) { toast('⚠️ 金額を入力してください'); return; }
+    // 税込→税抜に逆算
+    const taxExc = Math.round(taxInc / (1 + currentTax/100));
+    items.push({ name, price: taxExc, qty: 1, tax: currentTax, discount: 0, direct: true, directAmount: taxInc });
+  } else {
+    const price = parseFloat(document.getElementById('c-price').value)||0;
+    const qty = parseInt(document.getElementById('c-qty').value)||1;
+    const discount = parseFloat(document.getElementById('c-discount').value)||0;
+    if(!price) { toast('⚠️ 単価を入力してください'); return; }
+    items.push({ name, price, qty, tax: currentTax, discount, direct: false });
+  }
+
+  renderItems();
+  updateBadge();
+  document.getElementById('confirm-panel').classList.remove('show');
+  document.getElementById('barcode-input').value = '';
+  document.getElementById('suggest-box').innerHTML = '';
+  toast('✅ ' + name + ' を追加');
+}
+
+// ========== 処理番号検索 ==========
 function onCodeInput(val) {
   const box = document.getElementById('suggest-box');
   if(val.length < 3) { box.innerHTML=''; return; }
-  const matches = Object.entries(MASTER).filter(([code])=>code.startsWith(val)).slice(0,5);
-  if(matches.length===0) { box.innerHTML=''; return; }
+  const matches = Object.entries(MASTER).filter(([code])=>code.startsWith(val)).slice(0,6);
+  if(!matches.length) { box.innerHTML=''; return; }
   box.innerHTML = `<div class="suggest-list">${matches.map(([code,p])=>`
     <div class="suggest-item" onclick="selectCode('${code}')">
       ${p.name}
-      <div class="suggest-code">${code} ／ ¥${p.price.toLocaleString()}（${p.tax}%）</div>
+      <div class="suggest-code">${code} ／ ¥${p.price.toLocaleString()} ／ ${p.tax}%</div>
     </div>`).join('')}</div>`;
 }
 
@@ -462,37 +535,31 @@ function searchByCode() {
   if(!code) return;
   const product = MASTER[code];
   if(product) {
-    addItem(product.name, product.price, 1, product.tax, 0, code);
-    toast('✅ ' + product.name + ' を追加');
-    document.getElementById('barcode-input').value = '';
-    document.getElementById('suggest-box').innerHTML = '';
+    showConfirmPanel(product.name, product.price, product.tax);
   } else {
-    toast('⚠️ 未登録（' + code + '）→ 手入力タブへ');
-    switchTab('manual');
-    document.getElementById('m-code').value = code;
-    document.getElementById('m-name').focus();
+    toast('⚠️ 未登録（' + code + '）');
+    showConfirmPanel('未登録商品（' + code + '）', 0, 10);
   }
 }
 
-function onManualCodeInput(val) {
-  const box = document.getElementById('m-suggest-box');
-  if(val.length < 3) { box.innerHTML=''; return; }
-  const matches = Object.entries(MASTER).filter(([code])=>code.startsWith(val)).slice(0,5);
-  if(matches.length===0) { box.innerHTML=''; return; }
+// ========== 商品名検索 ==========
+function onNameSearch(val) {
+  const box = document.getElementById('name-suggest-box');
+  if(val.length < 1) { box.innerHTML=''; return; }
+  const matches = Object.entries(MASTER).filter(([,p])=>p.name.includes(val)).slice(0,8);
+  if(!matches.length) { box.innerHTML='<div style="padding:10px;font-size:13px;color:var(--mu)">見つかりません</div>'; return; }
   box.innerHTML = `<div class="suggest-list">${matches.map(([code,p])=>`
-    <div class="suggest-item" onclick="selectManualCode('${code}')">
+    <div class="suggest-item" onclick="selectNameResult('${code}')">
       ${p.name}
-      <div class="suggest-code">${code} ／ ¥${p.price.toLocaleString()}（${p.tax}%）</div>
+      <div class="suggest-code">${code} ／ ¥${p.price.toLocaleString()} ／ ${p.tax}%</div>
     </div>`).join('')}</div>`;
 }
 
-function selectManualCode(code) {
+function selectNameResult(code) {
   const p = MASTER[code];
-  document.getElementById('m-code').value = code;
-  document.getElementById('m-name').value = p.name;
-  document.getElementById('m-price').value = p.price;
-  document.getElementById('m-tax').value = p.tax;
-  document.getElementById('m-suggest-box').innerHTML = '';
+  document.getElementById('name-search').value = '';
+  document.getElementById('name-suggest-box').innerHTML = '';
+  showConfirmPanel(p.name, p.price, p.tax);
 }
 
 // ========== カメラ ==========
@@ -500,18 +567,14 @@ async function toggleCamera() {
   if(cameraActive) { stopCamera(); return; }
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+      video: { facingMode: {ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} }
     });
-    const video = document.getElementById('camera-view');
-    video.srcObject = stream;
+    document.getElementById('camera-view').srcObject = stream;
     document.getElementById('camera-wrap').style.display = 'block';
     document.getElementById('cam-icon').textContent = '⏹';
     document.getElementById('cam-text').textContent = 'カメラ停止';
-    document.getElementById('scan-status').textContent = '';
     cameraActive = true;
-  } catch(e) {
-    toast('❌ カメラエラー: ' + e.message);
-  }
+  } catch(e) { toast('❌ カメラエラー: ' + e.message); }
 }
 
 function stopCamera() {
@@ -528,15 +591,11 @@ async function captureAndScan() {
   const canvas = document.getElementById('camera-canvas');
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0);
-
+  canvas.getContext('2d').drawImage(video, 0, 0);
   document.getElementById('scan-status').textContent = '解析中...';
-
-  // BarcodeDetector API（Chrome Android / Safari 17+対応）
   if('BarcodeDetector' in window) {
     try {
-      const detector = new BarcodeDetector({ formats: ['ean_13','ean_8','code_128','code_39','itf','upc_a','upc_e'] });
+      const detector = new BarcodeDetector({formats:['ean_13','ean_8','code_128','code_39','upc_a','upc_e']});
       const codes = await detector.detect(canvas);
       if(codes.length > 0) {
         const raw = codes[0].rawValue;
@@ -544,44 +603,17 @@ async function captureAndScan() {
         document.getElementById('barcode-input').value = raw;
         stopCamera();
         searchByCode();
-        return;
       } else {
         document.getElementById('scan-status').textContent = '読み取れませんでした。もう一度試してください';
       }
-    } catch(e) {
-      document.getElementById('scan-status').textContent = '解析エラー: ' + e.message;
-    }
+    } catch(e) { document.getElementById('scan-status').textContent = 'エラー: ' + e.message; }
   } else {
-    // BarcodeDetector非対応の場合は画像をbase64にして番号入力を促す
-    document.getElementById('scan-status').textContent = 'このブラウザはバーコード解析非対応です。処理番号を直接入力してください';
+    document.getElementById('scan-status').textContent = 'バーコード解析非対応。処理番号を直接入力してください';
     stopCamera();
   }
 }
 
-// ========== 商品追加 ==========
-function addItem(name, price, qty, tax, discount, code='') {
-  items.push({ name, price:parseFloat(price)||0, qty:parseInt(qty)||1, tax:parseInt(tax)||10, discount:parseFloat(discount)||0, code });
-  renderItems();
-  updateBadge();
-}
-
-function addManualItem() {
-  const name = document.getElementById('m-name').value.trim();
-  const price = document.getElementById('m-price').value;
-  const qty = document.getElementById('m-qty').value;
-  const tax = document.getElementById('m-tax').value;
-  const discount = document.getElementById('m-discount').value;
-  const code = document.getElementById('m-code').value;
-  if(!name) { toast('⚠️ 商品名を入力してください'); return; }
-  if(!price) { toast('⚠️ 単価を入力してください'); return; }
-  addItem(name, price, qty, tax, discount, code);
-  ['m-name','m-price','m-code'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('m-qty').value='1';
-  document.getElementById('m-discount').value='0';
-  document.getElementById('m-suggest-box').innerHTML='';
-  toast('✅ 追加しました');
-}
-
+// ========== 明細 ==========
 function changeQty(i, d) { items[i].qty=Math.max(1,items[i].qty+d); renderItems(); updateBadge(); }
 function removeItem(i) { items.splice(i,1); renderItems(); updateBadge(); }
 function clearItems() { if(items.length&&confirm('明細をすべてクリアしますか？')){ items=[]; renderItems(); updateBadge(); } }
@@ -590,22 +622,23 @@ function renderItems() {
   const el = document.getElementById('items-list');
   if(!items.length) { el.innerHTML='<div class="empty-state">商品を追加してください</div>'; return; }
   el.innerHTML = items.map((item,i)=>{
-    const sub = Math.floor(item.price*(1-item.discount/100)*item.qty);
+    const sub = item.direct ? item.directAmount : Math.floor(item.price*(1-item.discount/100)*item.qty);
     return `<div class="item-row">
       <div class="item-name">${item.name}</div>
       <div class="item-meta">
         <span class="item-price">¥${sub.toLocaleString()}</span>
         <span class="tax-badge tax-${item.tax}">${item.tax}%</span>
         ${item.discount>0?`<span class="disc-badge">-${item.discount}%</span>`:''}
+        ${item.direct?`<span class="direct-badge">直接入力</span>`:''}
       </div>
-      <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+      ${!item.direct?`<div style="display:flex;gap:8px;margin-top:6px;align-items:center">
         <div class="qty-ctrl">
           <button onclick="changeQty(${i},-1)">−</button>
           <span>${item.qty}</span>
           <button onclick="changeQty(${i},1)">＋</button>
         </div>
         <span style="font-size:12px;color:var(--mu)">単価¥${item.price.toLocaleString()}</span>
-      </div>
+      </div>`:''}
       <button class="item-del" onclick="removeItem(${i})">✕</button>
     </div>`;
   }).join('');
@@ -618,14 +651,21 @@ function updateBadge() {
 
 // ========== 計算 ==========
 function calcTotals() {
-  let subtotal=0,totalDiscount=0,base8=0,base10=0;
+  let subtotal=0, totalDiscount=0, base8=0, base10=0;
   items.forEach(item=>{
-    const orig=item.price*item.qty, disc=orig*(item.discount/100), after=orig-disc;
-    subtotal+=orig; totalDiscount+=disc;
-    if(item.tax===8) base8+=after; else base10+=after;
+    if(item.direct) {
+      // 直接入力は税込金額から逆算
+      const taxExc = Math.round(item.directAmount / (1 + item.tax/100));
+      if(item.tax===8) base8+=taxExc; else base10+=taxExc;
+      subtotal+=taxExc;
+    } else {
+      const orig=item.price*item.qty, disc=orig*(item.discount/100), after=orig-disc;
+      subtotal+=orig; totalDiscount+=disc;
+      if(item.tax===8) base8+=after; else base10+=after;
+    }
   });
   const tax8=Math.floor(base8*0.08), tax10=Math.floor(base10*0.10);
-  return {subtotal,totalDiscount,base8,base10,tax8,tax10,total:Math.floor(base8+base10)+tax8+tax10};
+  return {subtotal, totalDiscount, base8, base10, tax8, tax10, total:Math.floor(base8+base10)+tax8+tax10};
 }
 
 function updateSummary() {
@@ -649,8 +689,12 @@ function showPreview() {
   const date=document.getElementById('issue-date').value;
   const rno=document.getElementById('receipt-no').value;
   const rows=items.map(item=>{
-    const after=Math.floor(item.price*(1-item.discount/100)*item.qty);
-    return `<tr><td>${item.name}${item.discount>0?` <span style="color:var(--red);font-size:10px">(-${item.discount}%)</span>`:''}</td><td style="text-align:right">×${item.qty}</td><td style="text-align:right">¥${after.toLocaleString()}<span class="tax-badge tax-${item.tax}" style="margin-left:3px">${item.tax}%</span></td></tr>`;
+    const sub = item.direct ? item.directAmount : Math.floor(item.price*(1-item.discount/100)*item.qty);
+    return `<tr>
+      <td>${item.name}${item.discount>0?` <span style="color:var(--red);font-size:10px">(-${item.discount}%)</span>`:''}${item.direct?` <span style="color:#6a1a9a;font-size:10px">直接</span>`:''}</td>
+      <td style="text-align:right">${item.direct?'':('×'+item.qty)}</td>
+      <td style="text-align:right">¥${sub.toLocaleString()}<span class="tax-badge tax-${item.tax}" style="margin-left:3px">${item.tax}%</span></td>
+    </tr>`;
   }).join('');
   document.getElementById('receipt-content').innerHTML=`
     <h2>領 収 書</h2>
@@ -686,17 +730,18 @@ function closePreview(){ document.getElementById('preview-modal').style.display=
 function exportExcel() {
   if(!items.length){ toast('⚠️ 商品を追加してください'); return; }
   const c=calcTotals();
-  const recipient=document.getElementById('recipient').value;
-  const purpose=document.getElementById('purpose').value;
-  const date=document.getElementById('issue-date').value;
-  const rno=document.getElementById('receipt-no').value;
   const wb=XLSX.utils.book_new();
   const ws_data=[
     ['領収書'],[''],
-    ['領収書番号',rno],['発行日',date],[''],
-    ['宛名',recipient+' 様'],['但し書き',purpose],[''],
-    ['商品名','単価（税抜）','数量','割引率','税率','小計（税抜）'],
-    ...items.map(item=>[item.name,item.price,item.qty,item.discount+'%',item.tax+'%',Math.floor(item.price*(1-item.discount/100)*item.qty)]),
+    ['領収書番号',document.getElementById('receipt-no').value],
+    ['発行日',document.getElementById('issue-date').value],[''],
+    ['宛名',document.getElementById('recipient').value+' 様'],
+    ['但し書き',document.getElementById('purpose').value],[''],
+    ['商品名','単価（税抜）','数量','割引率','税率','小計'],
+    ...items.map(item=>{
+      const sub=item.direct?item.directAmount:Math.floor(item.price*(1-item.discount/100)*item.qty);
+      return [item.name, item.direct?'直接入力':item.price, item.direct?'-':item.qty, item.direct?'-':item.discount+'%', item.tax+'%', sub];
+    }),
     [''],
     ['小計（税抜）','','','','',Math.floor(c.subtotal)],
     ['値引き合計','','','','',-Math.floor(c.totalDiscount)],
@@ -708,13 +753,14 @@ function exportExcel() {
     [''],['発行者','メナード北谷美浜店'],
   ];
   const ws=XLSX.utils.aoa_to_sheet(ws_data);
-  ws['!cols']=[{wch:28},{wch:14},{wch:8},{wch:10},{wch:8},{wch:14}];
+  ws['!cols']=[{wch:28},{wch:12},{wch:6},{wch:8},{wch:6},{wch:12}];
   XLSX.utils.book_append_sheet(wb,ws,'領収書');
+  const date=document.getElementById('issue-date').value;
+  const rno=document.getElementById('receipt-no').value;
   XLSX.writeFile(wb,`領収書_${rno}_${date}.xlsx`);
   toast('📥 ダウンロードしました');
 }
 
-// ========== Toast ==========
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
 </script>
 </body>
