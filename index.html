@@ -2,6 +2,13 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="メナード領収書">
+<meta name="application-name" content="メナード領収書">
+<meta name="theme-color" content="#8a5c00">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>領収書｜メナード北谷美浜店</title>
 <script>
@@ -137,6 +144,11 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
 </div>
 
 <!-- スキャンページ -->
+
+<div id="install-banner" style="display:none;background:#8a5c00;color:#fff;padding:10px 14px;font-size:12px;text-align:center;position:relative">
+  📲 ホーム画面に追加すると便利です！　Safari下部の「共有」→「ホーム画面に追加」
+  <button onclick="document.getElementById('install-banner').style.display='none'" style="background:none;border:none;color:#fff;font-size:16px;position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer">✕</button>
+</div>
 <div class="page active" id="page-scan">
 
   <!-- 入力欄 -->
@@ -549,6 +561,13 @@ let stream = null;
 
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', () => {
+  // ホーム画面未追加の場合にバナー表示
+  const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone;
+  if (isIOS && !isStandalone) {
+    document.getElementById('install-banner').style.display = 'block';
+  }
+
   const today = new Date();
   document.getElementById('issue-date').value = today.toISOString().split('T')[0];
   document.getElementById('receipt-no').value = 'R' + today.getFullYear() + String(today.getMonth()+1).padStart(2,'0') + String(today.getDate()).padStart(2,'0') + '-' + String(Math.floor(Math.random()*1000)).padStart(3,'0');
