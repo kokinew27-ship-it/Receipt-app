@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="32" fill="#8a5c00"/>
+  <rect x="16" y="16" width="160" height="160" rx="24" fill="#c8860a"/>
+  <text x="96" y="80" font-size="64" text-anchor="middle" fill="white">🌸</text>
+  <text x="96" y="130" font-size="22" text-anchor="middle" fill="white" font-family="sans-serif" font-weight="bold">領収書</text>
+  <text x="96" y="158" font-size="14" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-family="sans-serif">メナード北谷</text>
+</svg>
