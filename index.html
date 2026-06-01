@@ -191,53 +191,72 @@ input:focus,select:focus{border-color:var(--p);}
 
   <!-- 支払い方法 -->
   <div class="card" id="pay-card" style="display:none">
-    <div class="ch">💳 支払い方法</div>
+    <div class="ch">💳 支払い方法を選択</div>
     <div class="cb">
-      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
-        <label style="display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--bd);border-radius:10px;padding:12px 14px;cursor:pointer">
-          <input type="radio" name="paytype" id="pay-cash" value="cash" style="width:20px;height:20px;accent-color:var(--p)" onchange="onPayChange()" checked>
-          <span style="font-size:15px;font-weight:600">💴 現金のみ</span>
-        </label>
-        <label style="display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--bd);border-radius:10px;padding:12px 14px;cursor:pointer">
-          <input type="radio" name="paytype" id="pay-other" value="other" style="width:20px;height:20px;accent-color:var(--p)" onchange="onPayChange()">
-          <span style="font-size:15px;font-weight:600">💳 現金以外の支払い</span>
-        </label>
-        <label style="display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--bd);border-radius:10px;padding:12px 14px;cursor:pointer">
-          <input type="radio" name="paytype" id="pay-mixed" value="mixed" style="width:20px;height:20px;accent-color:var(--p)" onchange="onPayChange()">
-          <span style="font-size:15px;font-weight:600">💴＋💳 現金＋現金以外</span>
-        </label>
-      </div>
-      <div id="pay-other-type" style="display:none;margin-bottom:12px">
-        <label style="margin-bottom:6px">現金以外の種別</label>
-        <div style="display:flex;gap:8px;margin-top:6px">
-          <label style="flex:1;display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid var(--bd);border-radius:10px;padding:10px;cursor:pointer">
-            <input type="radio" name="othertype" id="ot-credit" value="credit" style="width:18px;height:18px;accent-color:var(--p)" checked onchange="updatePayRows()">
-            <span style="font-size:14px;font-weight:600">💳 クレジット</span>
-          </label>
-          <label style="flex:1;display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid var(--bd);border-radius:10px;padding:10px;cursor:pointer">
-            <input type="radio" name="othertype" id="ot-paypay" value="paypay" style="width:18px;height:18px;accent-color:var(--p)" onchange="updatePayRows()">
-            <span style="font-size:14px;font-weight:600">📱 PAYPAY・その他</span>
-          </label>
+
+      <!-- ① 現金のみ -->
+      <div id="pay-btn-cash" onclick="selectPayType('cash')"
+        style="display:flex;align-items:center;gap:12px;border:2px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;background:#fff;transition:all .2s">
+        <div id="pay-dot-cash" style="width:22px;height:22px;border-radius:50%;border:2px solid var(--bd);flex-shrink:0"></div>
+        <div>
+          <div style="font-size:15px;font-weight:700">💴 ① 現金のみ</div>
+          <div style="font-size:12px;color:var(--mu);margin-top:2px">領収書に「現金払いのみ」と記載</div>
         </div>
       </div>
-      <div id="pay-mixed-fields" style="display:none">
-        <div style="background:var(--pl);border-radius:10px;padding:12px">
+
+      <!-- ② クレジットのみ -->
+      <div id="pay-btn-credit" onclick="selectPayType('credit')"
+        style="display:flex;align-items:center;gap:12px;border:2px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;background:#fff;transition:all .2s">
+        <div id="pay-dot-credit" style="width:22px;height:22px;border-radius:50%;border:2px solid var(--bd);flex-shrink:0"></div>
+        <div>
+          <div style="font-size:15px;font-weight:700">💳 ② クレジットのみ</div>
+          <div style="font-size:12px;color:var(--mu);margin-top:2px">領収書に「クレジットのみ」と記載</div>
+        </div>
+      </div>
+
+      <!-- ③ PAYPAYその他のみ -->
+      <div id="pay-btn-paypay" onclick="selectPayType('paypay')"
+        style="display:flex;align-items:center;gap:12px;border:2px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;background:#fff;transition:all .2s">
+        <div id="pay-dot-paypay" style="width:22px;height:22px;border-radius:50%;border:2px solid var(--bd);flex-shrink:0"></div>
+        <div>
+          <div style="font-size:15px;font-weight:700">📱 ③ PAYPAY・その他のみ</div>
+          <div style="font-size:12px;color:var(--mu);margin-top:2px">領収書に「PAYPAY・その他のみ」と記載</div>
+        </div>
+      </div>
+
+      <!-- ④ 混合支払い -->
+      <div id="pay-btn-mixed" onclick="selectPayType('mixed')"
+        style="display:flex;align-items:center;gap:12px;border:2px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;background:#fff;transition:all .2s">
+        <div id="pay-dot-mixed" style="width:22px;height:22px;border-radius:50%;border:2px solid var(--bd);flex-shrink:0"></div>
+        <div>
+          <div style="font-size:15px;font-weight:700">💴＋💳 ④ 混合支払い</div>
+          <div style="font-size:12px;color:var(--mu);margin-top:2px">現金＋クレジット＋PAYPAYを組み合わせ</div>
+        </div>
+      </div>
+
+      <!-- 混合支払い入力欄 -->
+      <div id="pay-mixed-fields" style="display:none;margin-bottom:10px">
+        <div style="background:var(--pl);border-radius:10px;padding:14px">
           <div class="fr" style="margin-bottom:10px">
             <label>💴 現金（円）</label>
-            <input type="tel" id="pay-cash-amt" placeholder="0" inputmode="numeric" style="font-size:17px;text-align:right" oninput="onPayAmtChange()">
+            <input type="tel" id="pay-cash-amt" placeholder="0" inputmode="numeric"
+              style="font-size:17px;text-align:right;font-weight:600" oninput="onPayAmtChange()">
           </div>
-          <div class="fr" style="margin-bottom:10px" id="pay-credit-row">
+          <div class="fr" style="margin-bottom:10px">
             <label>💳 クレジット（円）</label>
-            <input type="tel" id="pay-credit-amt" placeholder="0" inputmode="numeric" style="font-size:17px;text-align:right" oninput="onPayAmtChange()">
+            <input type="tel" id="pay-credit-amt" placeholder="0" inputmode="numeric"
+              style="font-size:17px;text-align:right;font-weight:600" oninput="onPayAmtChange()">
           </div>
-          <div class="fr" style="margin-bottom:10px;display:none" id="pay-paypay-row">
+          <div class="fr" style="margin-bottom:6px">
             <label>📱 PAYPAY・その他（円）</label>
-            <input type="tel" id="pay-paypay-amt" placeholder="0" inputmode="numeric" style="font-size:17px;text-align:right" oninput="onPayAmtChange()">
+            <input type="tel" id="pay-paypay-amt" placeholder="0" inputmode="numeric"
+              style="font-size:17px;text-align:right;font-weight:600" oninput="onPayAmtChange()">
           </div>
-          <div id="pay-balance" style="font-size:13px;text-align:right;color:var(--mu);margin-top:4px"></div>
+          <div id="pay-balance" style="font-size:13px;text-align:right;color:var(--mu);padding-top:6px;border-top:1px solid var(--bd)"></div>
         </div>
       </div>
-      <!-- 支払い方法確定ボタン -->
+
+      <!-- 確定ボタン -->
       <button class="btn bp" id="pay-confirm-btn" onclick="confirmPayment()" style="margin-top:4px;display:none">
         ✅ この支払い方法で確定して領収書へ
       </button>
@@ -372,7 +391,7 @@ input:focus,select:focus{border-color:var(--p);}
     <div class="mb">
       <div id="prev-cont" style="font-size:13px;line-height:1.9"></div>
       <div style="margin-top:14px">
-        <button class="btn bs" onclick="doPrint();closePrev()">🖨️ 印刷する</button>
+        <button class="btn bs" onclick="printFromPreview()">🖨️ 印刷する</button>
         <button class="btn bo" onclick="closePrev()">閉じる</button>
       </div>
     </div>
@@ -750,9 +769,16 @@ function finishInput() {
   document.getElementById('pay-card').style.display = 'block';
   // 支払い確定ボタンは選択後に表示
   document.getElementById('pay-confirm-btn').style.display = 'none';
-  // デフォルトで現金を選択済みにする
-  document.getElementById('pay-cash').checked = true;
-  onPayChange();
+  currentPayType = '';
+  // 全ボタンをリセット
+  ['cash','credit','paypay','mixed'].forEach(t => {
+    const btn = document.getElementById('pay-btn-'+t);
+    const dot = document.getElementById('pay-dot-'+t);
+    if(btn){ btn.style.border='2px solid var(--bd)'; btn.style.background='#fff'; }
+    if(dot){ dot.style.background='#fff'; dot.style.border='2px solid var(--bd)'; dot.innerHTML=''; }
+  });
+  document.getElementById('pay-confirm-btn').style.display='none';
+  document.getElementById('pay-mixed-fields').style.display='none';
   setTimeout(() => {
     document.getElementById('pay-card').scrollIntoView({behavior: 'smooth'});
   }, 100);
@@ -790,7 +816,7 @@ function onPayAmtChange() {
 
 function confirmPayment() {
   const label = getPaymentLabel();
-  const type = document.querySelector('input[name="paytype"]:checked') ? document.querySelector('input[name="paytype"]:checked').value : 'cash';
+  const type = currentPayType || 'cash';
 
   // 複合払いの場合は金額チェック
   if(type === 'mixed') {
@@ -918,6 +944,12 @@ function showPreview() {
   document.getElementById('prev-modal').style.display = 'block';
 }
 function closePrev(){ document.getElementById('prev-modal').style.display='none'; }
+
+function printFromPreview() {
+  // モーダルを閉じてから印刷
+  document.getElementById('prev-modal').style.display = 'none';
+  setTimeout(() => { doPrint(); }, 300);
+}
 
 function doPrint() {
   if(!items.length){ toast('⚠️ 商品を追加してください'); return; }
