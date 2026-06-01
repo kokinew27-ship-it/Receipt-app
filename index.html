@@ -817,46 +817,134 @@ function buildDailyHTML() {
 }
 
 function printDaily() {
-  const h=buildDailyHTML();
+  const today = new Date().toISOString().split('T')[0];
+
+  // 異なる日付のデータチェック
+  const otherDates = [...new Set(daily.filter(r=>r.date!==today).map(r=>r.date))];
+  if(otherDates.length > 0) {
+    const msg = '過去の日付のデータが残っています:\n' + otherDates.join('\n') + '\n\n削除してから本日分を印刷しますか？\n\n「OK」→ 過去データを削除して印刷\n「キャンセル」→ 印刷しない';
+    if(confirm(msg)) {
+      daily = daily.filter(r => r.date === today);
+      try{ localStorage.setItem('mdaily', JSON.stringify(daily)); }catch(e){}
+      toast('🗑 過去データを削除しました');
+    } else {
+      return;
+    }
+  }
+
+  const h = buildDailyHTML();
   if(!h){ toast('⚠️ 本日の発行データがありません'); return; }
-  const area=document.getElementById('parea');
-  area.style.display='block';
-  area.innerHTML=h;
+  const area = document.getElementById('parea');
+  area.style.display = 'block';
+  area.innerHTML = h;
   window.print();
-  setTimeout(()=>{ area.style.display='none'; },800);
+  setTimeout(()=>{ area.style.display='none'; }, 800);
 }
 
 function mailDaily() {
-  const today=new Date().toISOString().split('T')[0];
-  const recs=daily.filter(r=>r.date===today);
+  const today = new Date().toISOString().split('T')[0];
+  const recs = daily.filter(r => r.date === today);
   if(!recs.length){ toast('⚠️ 本日の発行データがありません'); return; }
-  const tot=recs.reduce((s,r)=>s+r.total,0);
-  const byStaff={};
+
+  // CSV作成（日付・商品番号・商品名・数量・お客様名・担当者）
+  const BOM = '\uFEFF';
+  const header = ['日付','領収書番号','商品番号','商品名','数量','お客様名','担当者','単価(税抜)','割引率(%)','税率(%)','小計(税込)'];
+  const csvRows = [header.join(',')];
+
+  recs.forEach(r => {
+    r.items.forEach(item => {
+      const sub = item.direct
+        ? item.price
+        : Math.floor(item.price*(1-item.disc/100)*item.qty*(1+(item.tax/100)));
+      csvRows.push([
+        r.date,
+        r.rno,
+        item.code || '',
+        '"' + (item.name || '').replace(/"/g, '""') + '"',
+        item.qty || 1,
+        '"' + (r.recip || '').replace(/"/g, '""') + '"',
+        r.staff,
+        item.direct ? '' : item.price,
+        item.direct ? '' : (item.disc || 0),
+        item.direct ? '税込直接' : item.tax,
+        sub
+      ].join(','));
+    });
+  });
+
+  // 集計サマリーを末尾に追加
+  const tot = recs.reduce((s,r)=>s+r.total,0);
+  const disc = recs.reduce((s,r)=>s+r.disc,0);
+  const t8 = recs.reduce((s,r)=>s+r.t8,0);
+  const t10 = recs.reduce((s,r)=>s+r.t10,0);
+  const byStaff = {};
   recs.forEach(r=>{ byStaff[r.staff]=(byStaff[r.staff]||0)+r.total; });
-  const subj=encodeURIComponent('【日計表】メナード北谷美浜店 '+today);
-  const body=encodeURIComponent(
+
+  csvRows.push('');
+  csvRows.push('【日計サマリー】');
+  csvRows.push('発行枚数,' + recs.length + '枚');
+  csvRows.push('値引き合計,-¥' + disc.toLocaleString());
+  csvRows.push('消費税8%合計,¥' + t8.toLocaleString());
+  csvRows.push('消費税10%合計,¥' + t10.toLocaleString());
+  csvRows.push('【担当者別売上】');
+  Object.entries(byStaff).forEach(([s,v]) => csvRows.push(s + ',¥' + v.toLocaleString()));
+  csvRows.push('本日合計(税込),¥' + tot.toLocaleString());
+
+  const csvContent = BOM + csvRows.join('\n');
+  const blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+
+  // CSVダウンロード
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '日計表_' + today + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  // メール送信（本文にサマリー）
+  setTimeout(() => {
+    const subj = encodeURIComponent('【日計表】メナード北谷美浜店 ' + today);
+    const body = encodeURIComponent(
 `メナード北谷美浜店 日計表
 集計日：${today}
 発行枚数：${recs.length}枚
-━━━━━━━━━━━━━
+━━━━━━━━━━━━━━
 担当者別売上
 ${Object.entries(byStaff).map(([s,v])=>`  ${s}：¥${v.toLocaleString()}`).join('\n')}
-本日合計：¥${tot.toLocaleString()}
-━━━━━━━━━━━━━
+本日合計（税込）：¥${tot.toLocaleString()}
+値引き合計：-¥${disc.toLocaleString()}
+消費税8%：¥${t8.toLocaleString()}
+消費税10%：¥${t10.toLocaleString()}
+━━━━━━━━━━━━━━
 発行一覧
-${recs.map(r=>`  ${r.time} ${r.staff} ${r.recip}様 ¥${r.total.toLocaleString()}`).join('\n')}
-`);
-  window.location.href='mailto:kokinew27@gmail.com?subject='+subj+'&body='+body;
-  toast('📧 メールアプリを起動します');
+${recs.map(r=>`  ${r.time} ${r.rno} ${r.staff} ${r.recip}様 ¥${r.total.toLocaleString()}`).join('\n')}
+━━━━━━━━━━━━━━
+※ 詳細はダウンロードされたCSVファイルをご確認ください`
+    );
+    window.location.href = 'mailto:kokinew27@gmail.com?subject=' + subj + '&body=' + body;
+  }, 500);
+
+  toast('📧 CSVダウンロード＆メール起動します');
 }
 
 function clearDaily() {
-  const today=new Date().toISOString().split('T')[0];
-  if(!confirm('本日の日計をリセットしますか？')) return;
-  daily=daily.filter(r=>r.date!==today);
-  try{ localStorage.setItem('mdaily',JSON.stringify(daily)); }catch(e){}
-  renderDaily();
-  toast('🗑 リセットしました');
+  const today = new Date().toISOString().split('T')[0];
+  const allDates = [...new Set(daily.map(r=>r.date))].sort();
+  if(!allDates.length){ toast('⚠️ データがありません'); return; }
+
+  const hasOther = allDates.some(d=>d!==today);
+  const msg = hasOther
+    ? `データがある日付:\n${allDates.join('\n')}\n\n本日分のみ削除 → OK\n全データ削除 → キャンセル後に再度確認`
+    : '本日の日計をリセットしますか？';
+
+  if(confirm(msg)) {
+    daily = daily.filter(r => r.date !== today);
+    try{ localStorage.setItem('mdaily', JSON.stringify(daily)); }catch(e){}
+    renderDaily();
+    toast('🗑 本日分をリセットしました');
+  }
 }
 
 // ===== 管理者 =====
