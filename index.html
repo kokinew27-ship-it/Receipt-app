@@ -151,8 +151,14 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
         </div>
         <div id="suggest-box"></div>
       </div>
-      <button class="btn btn-cam" onclick="toggleCamera()" style="margin-bottom:0">
-        <span id="cam-icon">📷</span><span id="cam-text">カメラを起動</span>
+      <!-- iPhone用：カメラ撮影ボタン -->
+      <input type="file" id="camera-file" accept="image/*" capture="environment" style="display:none" onchange="scanFromPhoto(event)">
+      <button class="btn btn-cam" onclick="document.getElementById('camera-file').click()" style="margin-bottom:8px">
+        📷 カメラで撮影してスキャン
+      </button>
+      <!-- ライブカメラ（Android/PC用） -->
+      <button class="btn btn-outline" onclick="toggleCamera()" style="margin-bottom:0;font-size:14px">
+        <span id="cam-icon">🎥</span><span id="cam-text">ライブカメラ（Android用）</span>
       </button>
       <div class="camera-wrap" id="camera-wrap">
         <video id="camera-view" autoplay playsinline muted></video>
@@ -338,6 +344,63 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
 <div id="toast"></div>
 
 <script>
+
+// ========== iPhone写真撮影からスキャン ==========
+async function scanFromPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  document.getElementById('scan-status').textContent = '📷 解析中...';
+
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = async function() {
+    const canvas = document.getElementById('camera-canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+
+    if ('BarcodeDetector' in window) {
+      try {
+        const detector = new BarcodeDetector({
+          formats: ['ean_13','ean_8','code_128','code_39','itf','upc_a','upc_e','qr_code']
+        });
+        const codes = await detector.detect(canvas);
+        if (codes.length > 0) {
+          const raw = codes[0].rawValue;
+          document.getElementById('scan-status').textContent = '✅ 読取: ' + raw;
+          document.getElementById('barcode-input').value = raw;
+          searchByCode();
+        } else {
+          document.getElementById('scan-status').textContent = '⚠️ バーコードを認識できませんでした。もう一度撮影してください';
+        }
+      } catch(e) {
+        document.getElementById('scan-status').textContent = '❌ 解析エラー。処理番号を手入力してください';
+      }
+    } else {
+      // BarcodeDetector非対応（Safari）→ ZXing-jsで解析
+      try {
+        const { BrowserMultiFormatReader } = await import('https://unpkg.com/@zxing/browser@latest/esm/index.js');
+        const reader = new BrowserMultiFormatReader();
+        const result = await reader.decodeFromImageElement(
+          Object.assign(new Image(), {src: canvas.toDataURL()})
+        );
+        const raw = result.getText();
+        document.getElementById('scan-status').textContent = '✅ 読取: ' + raw;
+        document.getElementById('barcode-input').value = raw;
+        searchByCode();
+      } catch(e) {
+        document.getElementById('scan-status').textContent = '⚠️ 認識できませんでした。処理番号を入力してください';
+        document.getElementById('barcode-input').focus();
+      }
+    }
+  };
+  img.src = url;
+  // input をリセット（同じファイルを再度撮影できるように）
+  event.target.value = '';
+}
+
 // ========== 商品マスター（飲食フラグ付き） ==========
 const MASTER = {
 "711609":{"name":"TKクレンジング","price":2500,"tax":10,"food":false},
