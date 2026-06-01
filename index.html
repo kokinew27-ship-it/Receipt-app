@@ -136,6 +136,20 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .badge-count{background:var(--red);color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;position:absolute;top:6px;right:12px;}
 </style>
+
+<style id="print-style">
+@media print {
+  body * { visibility: hidden; }
+  #print-area, #print-area * { visibility: visible; }
+  #print-area {
+    position: fixed; left: 0; top: 0; width: 100%;
+    font-family: 'Hiragino Sans', sans-serif;
+    font-size: 13px; line-height: 1.8; padding: 20px;
+  }
+  .no-print { display: none !important; }
+}
+</style>
+<div id="print-area" style="display:none"></div>
 </head>
 <body>
 
@@ -303,7 +317,7 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
     </div>
   </div>
   <button class="btn btn-primary" onclick="showPreview()">👁 プレビュー確認</button>
-  <button class="btn btn-success" onclick="exportExcel()">📥 Excel出力</button>
+  <button class="btn btn-success" onclick="printReceipt()">🖨️ 印刷する</button>
 </div>
 
 
@@ -323,7 +337,8 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
       <div class="empty-state">まだ発行がありません</div>
     </div>
   </div>
-  <button class="btn btn-success" onclick="exportDailyExcel()">📥 日計表をExcel出力</button>
+  <button class="btn btn-primary" onclick="printDaily()">🖨️ 日計表を印刷</button>
+  <button class="btn btn-success" onclick="mailDaily()">📧 メールで送信</button>
   <button class="btn btn-danger-sm" style="width:100%;justify-content:center;margin-bottom:10px" onclick="clearDaily()">🗑 日計をリセット</button>
 </div>
 
@@ -434,7 +449,7 @@ input:focus,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(200,134
     <div class="modal-body">
       <div class="receipt" id="receipt-content"></div>
       <div style="margin-top:16px">
-        <button class="btn btn-success" onclick="exportExcel();closePreview()">📥 Excel出力</button>
+        <button class="btn btn-success" onclick="printFromPreview()">🖨️ 印刷する</button>
         <button class="btn btn-outline" onclick="closePreview()">閉じる</button>
       </div>
     </div>
@@ -1058,7 +1073,6 @@ function exportExcel(){
   const date=document.getElementById('issue-date').value;
   const rno=document.getElementById('receipt-no').value;
   XLSX.writeFile(wb,`領収書_${rno}_${date}.xlsx`);
-  saveToDailyRecord();
   toast('📥 ダウンロードしました');
 }
 
@@ -1196,6 +1210,171 @@ function clearDaily() {
   }
 }
 
+
+
+// ========== 印刷機能 ==========
+function buildReceiptHTML() {
+  const c = calcTotals();
+  const recipient = document.getElementById('recipient').value || '　　　　　';
+  const purpose = document.getElementById('purpose').value;
+  const date = document.getElementById('issue-date').value;
+  const rno = document.getElementById('receipt-no').value;
+  const staff = document.getElementById('staff-select') ? document.getElementById('staff-select').value : '';
+  const rows = items.map(item => {
+    if(item.isDirect) return `<tr><td>${item.name}</td><td style="text-align:right">−</td><td style="text-align:right">¥${item.price.toLocaleString()}（税込）</td></tr>`;
+    const sub = Math.floor(item.price*(1-item.discount/100)*item.qty);
+    const taxAmt = Math.floor(sub*(item.tax/100));
+    return `<tr><td>${item.name}${item.discount>0?` (-${item.discount}%)`:''}</td><td style="text-align:right">×${item.qty}</td><td style="text-align:right">¥${(sub+taxAmt).toLocaleString()}（${item.tax}%）</td></tr>`;
+  }).join('');
+
+  return `
+    <div style="text-align:center;font-size:22px;font-weight:700;margin-bottom:8px">領 収 書</div>
+    <div style="text-align:center;font-size:12px;color:#888;margin-bottom:8px">${rno}</div>
+    <hr style="border:1px dashed #ccc;margin:8px 0">
+    <div style="font-size:16px;font-weight:600;margin:10px 0">${recipient} 様</div>
+    ${staff ? `<div style="font-size:13px;color:#666;margin-bottom:8px">担当：${staff}</div>` : ''}
+    <div style="background:#fdf3e0;border-radius:8px;padding:12px;text-align:center;margin:10px 0">
+      <div style="font-size:12px;color:#888">合計金額（税込）</div>
+      <div style="font-size:32px;font-weight:700;color:#8a5c00">¥${c.total.toLocaleString()}</div>
+    </div>
+    <div style="font-size:13px;margin-bottom:10px">但し：${purpose}</div>
+    <hr style="border:1px dashed #ccc;margin:8px 0">
+    <table style="width:100%;font-size:12px;border-collapse:collapse">${rows}</table>
+    <hr style="border:1px dashed #ccc;margin:8px 0">
+    <table style="width:100%;font-size:11px">
+      <tr><td>小計（税抜）</td><td style="text-align:right">¥${Math.floor(c.subtotal).toLocaleString()}</td></tr>
+      ${c.totalDiscount>0?`<tr><td style="color:#c0392b">値引き</td><td style="text-align:right;color:#c0392b">-¥${Math.floor(c.totalDiscount).toLocaleString()}</td></tr>`:''}
+      <tr><td>8%対象（税抜）</td><td style="text-align:right">¥${Math.floor(c.base8).toLocaleString()}</td></tr>
+      <tr><td>　消費税8%</td><td style="text-align:right">¥${c.tax8.toLocaleString()}</td></tr>
+      <tr><td>10%対象（税抜）</td><td style="text-align:right">¥${Math.floor(c.base10).toLocaleString()}</td></tr>
+      <tr><td>　消費税10%</td><td style="text-align:right">¥${c.tax10.toLocaleString()}</td></tr>
+    </table>
+    <hr style="border:1px dashed #ccc;margin:8px 0">
+    <div style="text-align:right;font-size:11px;color:#888">${date}</div>
+    <div style="text-align:center;margin-top:10px;font-weight:700;font-size:15px">メナード北谷美浜店</div>
+    <div style="text-align:center;font-size:11px;color:#888">沖縄県中頭郡北谷町美浜</div>
+  `;
+}
+
+function printReceipt() {
+  if(!items.length){ toast('⚠️ 商品を追加してください'); return; }
+  const area = document.getElementById('print-area');
+  area.style.display = 'block';
+  area.innerHTML = buildReceiptHTML();
+  window.print();
+  setTimeout(() => { area.style.display = 'none'; }, 1000);
+  saveToDailyRecord();
+}
+
+function printFromPreview() {
+  closePreview();
+  setTimeout(() => printReceipt(), 300);
+}
+
+// ========== 日計表印刷 ==========
+function buildDailyHTML() {
+  const today = new Date().toISOString().split('T')[0];
+  const todayRecs = dailyRecords.filter(r => r.date === today);
+  if(!todayRecs.length) return null;
+
+  const totalSales = todayRecs.reduce((s,r)=>s+r.total,0);
+  const totalDiscount = todayRecs.reduce((s,r)=>s+r.discount,0);
+  const tax8total = todayRecs.reduce((s,r)=>s+r.tax8,0);
+  const tax10total = todayRecs.reduce((s,r)=>s+r.tax10,0);
+  const byStaff = {};
+  todayRecs.forEach(r=>{ byStaff[r.staff]=(byStaff[r.staff]||0)+r.total; });
+
+  const staffRows = Object.entries(byStaff).map(([s,v])=>
+    `<tr><td>　${s}</td><td style="text-align:right">¥${v.toLocaleString()}</td></tr>`
+  ).join('');
+
+  const receiptRows = todayRecs.map(r=>`
+    <tr style="border-bottom:1px solid #eee">
+      <td style="padding:4px">${r.time}</td>
+      <td style="padding:4px">${r.staff}</td>
+      <td style="padding:4px">${r.recipient}</td>
+      <td style="padding:4px;text-align:right;font-weight:600">¥${r.total.toLocaleString()}</td>
+    </tr>`).join('');
+
+  return `
+    <div style="text-align:center;font-size:20px;font-weight:700;margin-bottom:6px">日 計 表</div>
+    <div style="text-align:center;font-size:13px;color:#888;margin-bottom:12px">メナード北谷美浜店　${today}</div>
+    <hr style="border:1px solid #ccc;margin:8px 0">
+    <table style="width:100%;font-size:13px">
+      <tr><td>発行枚数</td><td style="text-align:right">${todayRecs.length}枚</td></tr>
+      <tr style="color:#c0392b"><td>値引き合計</td><td style="text-align:right">-¥${totalDiscount.toLocaleString()}</td></tr>
+      <tr><td>消費税8%合計</td><td style="text-align:right">¥${tax8total.toLocaleString()}</td></tr>
+      <tr><td>消費税10%合計</td><td style="text-align:right">¥${tax10total.toLocaleString()}</td></tr>
+      <tr style="font-size:16px"><td colspan="2"><hr style="margin:6px 0"></td></tr>
+      <tr><td><b>担当者別売上</b></td><td></td></tr>
+      ${staffRows}
+      <tr style="font-size:18px;font-weight:700;color:#8a5c00;border-top:2px solid #ccc">
+        <td style="padding-top:8px">本日合計（税込）</td>
+        <td style="text-align:right;padding-top:8px">¥${totalSales.toLocaleString()}</td>
+      </tr>
+    </table>
+    <hr style="border:1px dashed #ccc;margin:12px 0">
+    <div style="font-size:13px;font-weight:700;margin-bottom:6px">発行一覧</div>
+    <table style="width:100%;font-size:12px;border-collapse:collapse">
+      <tr style="background:#fdf3e0;font-weight:600">
+        <td style="padding:4px">時刻</td><td style="padding:4px">担当</td>
+        <td style="padding:4px">宛名</td><td style="padding:4px;text-align:right">金額</td>
+      </tr>
+      ${receiptRows}
+    </table>
+  `;
+}
+
+function printDaily() {
+  const html = buildDailyHTML();
+  if(!html){ toast('⚠️ 本日の発行データがありません'); return; }
+  const area = document.getElementById('print-area');
+  area.style.display = 'block';
+  area.innerHTML = html;
+  window.print();
+  setTimeout(()=>{ area.style.display='none'; }, 1000);
+}
+
+// ========== 日計表メール送信 ==========
+function mailDaily() {
+  const today = new Date().toISOString().split('T')[0];
+  const todayRecs = dailyRecords.filter(r => r.date === today);
+  if(!todayRecs.length){ toast('⚠️ 本日の発行データがありません'); return; }
+
+  const totalSales = todayRecs.reduce((s,r)=>s+r.total,0);
+  const totalDiscount = todayRecs.reduce((s,r)=>s+r.discount,0);
+  const tax8total = todayRecs.reduce((s,r)=>s+r.tax8,0);
+  const tax10total = todayRecs.reduce((s,r)=>s+r.tax10,0);
+  const byStaff = {};
+  todayRecs.forEach(r=>{ byStaff[r.staff]=(byStaff[r.staff]||0)+r.total; });
+
+  const staffLines = Object.entries(byStaff).map(([s,v])=>`  ${s}：¥${v.toLocaleString()}`).join('%0A');
+  const receiptLines = todayRecs.map(r=>`  ${r.time} ${r.staff} ${r.recipient}様 ¥${r.total.toLocaleString()}`).join('%0A');
+
+  const subject = encodeURIComponent(`【日計表】メナード北谷美浜店 ${today}`);
+  const body = encodeURIComponent(
+`メナード北谷美浜店 日計表
+集計日：${today}
+━━━━━━━━━━━━━━━━━━
+発行枚数：${todayRecs.length}枚
+値引き合計：-¥${totalDiscount.toLocaleString()}
+消費税8%合計：¥${tax8total.toLocaleString()}
+消費税10%合計：¥${tax10total.toLocaleString()}
+
+【担当者別売上】
+${Object.entries(byStaff).map(([s,v])=>`  ${s}：¥${v.toLocaleString()}`).join('
+')}
+
+本日合計（税込）：¥${totalSales.toLocaleString()}
+━━━━━━━━━━━━━━━━━━
+【発行一覧】
+${todayRecs.map(r=>`  ${r.time} ${r.staff} ${r.recipient}様 ¥${r.total.toLocaleString()}`).join('
+')}
+`);
+
+  window.location.href = `mailto:kokinew27@gmail.com?subject=${subject}&body=${body}`;
+  toast('📧 メールアプリを起動します');
+}
 
 // ========== 管理者機能 ==========
 const ADMIN_PW = 'menard2024';
