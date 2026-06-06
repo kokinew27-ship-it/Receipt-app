@@ -125,7 +125,7 @@ input:focus,select:focus{border-color:var(--p);}
   <div class="card">
     <div class="ch">📦 商品追加</div>
     <div class="cb">
-      <div class="fr">
+      <div class="fr" style="position:relative">
         <label>処理番号（6桁）を入力</label>
         <div style="display:flex;gap:8px">
           <input type="tel" id="code-inp" placeholder="例：711609" maxlength="10"
@@ -647,6 +647,14 @@ let daily = [];
 try { daily = JSON.parse(localStorage.getItem('mdaily') || '[]'); } catch(e){}
 
 // ===== 初期化 =====
+document.addEventListener('click', function(e) {
+  const box = document.getElementById('sug-box');
+  const inp = document.getElementById('code-inp');
+  if (box && inp && !inp.contains(e.target) && !box.contains(e.target)) {
+    box.innerHTML = '';
+  }
+});
+
 window.onload = function() {
   const t = new Date();
   document.getElementById('idate').value = t.toISOString().split('T')[0];
