@@ -12,7 +12,7 @@
 <style>
 :root{--p:#c8860a;--pl:#fdf3e0;--pd:#8a5c00;--ac:#2d6a4f;--bg:#f7f4ef;--card:#fff;--bd:#e0d5c5;--tx:#2c2416;--mu:#8a7a60;--red:#c0392b;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-body{font-family:-apple-system,'Hiragino Sans',sans-serif;background:var(--bg);color:var(--tx);font-size:15px;padding-bottom:80px;}
+body{font-family:-apple-system,'Hiragino Sans',sans-serif;background:var(--bg);color:var(--tx);font-size:15px;padding-bottom:100px;}
 .hdr{background:linear-gradient(135deg,#8a5c00,#c8860a);color:#fff;padding:12px 16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:space-between;}
 .hdr h1{font-size:16px;font-weight:700;}
 .hdr p{font-size:11px;opacity:.85;}
@@ -92,6 +92,10 @@ input:focus,select:focus{border-color:var(--p);}
 
 /* 印刷 */
 #parea{display:none;}
+@media (min-width: 600px) {
+  body { max-width: 540px; margin: 0 auto; padding-bottom: 100px; }
+  .nav { max-width: 540px; left: 50%; transform: translateX(-50%); }
+}
 @media print{
   body>*{display:none!important;}
   #parea{display:block!important;position:fixed;top:0;left:0;width:100%;padding:16px;font-size:13px;line-height:1.9;}
@@ -667,8 +671,17 @@ function goPage(name) {
 function onInput(v) {
   const box = document.getElementById('sug-box');
   if(v.length < 2) { box.innerHTML=''; return; }
+  // 完全一致が存在すれば自動検索
+  if(M[v]) {
+    box.innerHTML='';
+    doSearch();
+    return;
+  }
   const hits = Object.entries(M).filter(([c]) => c.startsWith(v)).slice(0, 8);
-  if(!hits.length) { box.innerHTML=''; return; }
+  if(!hits.length) {
+    box.innerHTML = '<div class="sug"><div class="si" style="color:var(--mu);text-align:center;cursor:default;pointer-events:none">該当なし</div></div>';
+    return;
+  }
   box.innerHTML = '<div class="sug">' + hits.map(([c,p]) =>
     `<div class="si" onclick="pick('${c}')">
       <div class="sn">${p.name}${p.food?' <span style="font-size:10px;background:#fff3cd;color:#856404;padding:1px 5px;border-radius:5px">飲食</span>':''}</div>
