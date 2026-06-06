@@ -643,8 +643,33 @@ try { custom = JSON.parse(localStorage.getItem('mcustom') || '{}'); } catch(e){}
 const M = Object.assign({}, BASE, custom);
 
 let items = [];
+try { items = JSON.parse(localStorage.getItem('msession_items') || '[]'); } catch(e){ items=[]; }
 let daily = [];
 try { daily = JSON.parse(localStorage.getItem('mdaily') || '[]'); } catch(e){}
+
+// ===== セッション自動保存 =====
+function saveSession() {
+  try {
+    localStorage.setItem('msession_items', JSON.stringify(items));
+    const fields = ['staff','recip','purp','idate','rno'];
+    const saved = {};
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if(el) saved[id] = el.value;
+    });
+    localStorage.setItem('msession_fields', JSON.stringify(saved));
+  } catch(e) {}
+}
+
+function restoreSession() {
+  try {
+    const fields = JSON.parse(localStorage.getItem('msession_fields') || '{}');
+    Object.entries(fields).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if(el && val) el.value = val;
+    });
+  } catch(e) {}
+}
 
 // ===== 初期化 =====
 document.addEventListener('click', function(e) {
@@ -657,8 +682,22 @@ document.addEventListener('click', function(e) {
 
 window.onload = function() {
   const t = new Date();
-  document.getElementById('idate').value = t.toISOString().split('T')[0];
-  document.getElementById('rno').value = 'R' + t.getFullYear() + pad(t.getMonth()+1) + pad(t.getDate()) + '-' + pad3(Math.floor(Math.random()*1000));
+  // セッション復元（保存データがあれば優先）
+  const savedFields = JSON.parse(localStorage.getItem('msession_fields') || '{}');
+  document.getElementById('idate').value = savedFields['idate'] || t.toISOString().split('T')[0];
+  document.getElementById('rno').value = savedFields['rno'] || 'R' + t.getFullYear() + pad(t.getMonth()+1) + pad(t.getDate()) + '-' + pad3(Math.floor(Math.random()*1000));
+  restoreSession();
+  // 明細が残っていれば次のアクションカードを表示
+  if(items.length > 0) {
+    renderItems();
+    updateBadge();
+    document.getElementById('next-action-card').style.display = 'block';
+  }
+  // 入力フィールドの変更時に自動保存
+  ['staff','recip','purp','idate','rno'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('change', saveSession);
+  });
 };
 function pad(n){ return String(n).padStart(2,'0'); }
 function pad3(n){ return String(n).padStart(3,'0'); }
@@ -790,6 +829,7 @@ function addFromPanel() {
   document.getElementById('next-action-card').style.display = 'block';
   document.getElementById('next-action-card').scrollIntoView({behavior:'smooth'});
   toast('✅ 追加しました');
+  saveSession();
 }
 
 // ===== 明細 =====
@@ -935,9 +975,9 @@ function getPaymentLabel() {
   return '';
 }
 
-function chgQty(i,d){ items[i].qty=Math.max(1,items[i].qty+d); renderItems(); updateBadge(); }
-function delItem(i){ items.splice(i,1); renderItems(); updateBadge(); }
-function clearItems(){ if(items.length && confirm('明細をすべてクリアしますか？')){ items=[]; renderItems(); updateBadge(); document.getElementById('pay-card').style.display='none'; document.getElementById('next-action-card').style.display='none'; } }
+function chgQty(i,d){ items[i].qty=Math.max(1,items[i].qty+d); renderItems(); updateBadge(); saveSession(); }
+function delItem(i){ items.splice(i,1); renderItems(); updateBadge(); saveSession(); }
+function clearItems(){ if(items.length && confirm('明細をすべてクリアしますか？')){ items=[]; renderItems(); updateBadge(); saveSession(); document.getElementById('pay-card').style.display='none'; document.getElementById('next-action-card').style.display='none'; } }
 function updateBadge(){ const b=document.getElementById('ibadge'); if(items.length){b.style.display='flex';b.textContent=items.length;}else b.style.display='none'; }
 
 // ===== 計算 =====
@@ -1043,6 +1083,9 @@ function saveToDaily() {
     items: items.map(i=>({...i}))
   });
   try { localStorage.setItem('mdaily', JSON.stringify(daily)); } catch(e){}
+  // 領収書発行後はセッションをクリア
+  items = [];
+  localStorage.removeItem('msession_items');
 }
 
 function renderDaily() {
